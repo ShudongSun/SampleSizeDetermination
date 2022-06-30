@@ -37,10 +37,12 @@
 #' @param mode The default value is "pilot", which means that we will see the input data(x and y) as the pilot data(usually small number), and use them to generate simulated data (corresponding to 'n_train_list'), and then get the curve and elbow point; "true" means that we will sample the data corresponding to 'n_train_list' from input data (x and y), and then get the curve and elbow point.
 #' @param num_repeat The number of times to repeat for each training data size in order to get a average value of index to reduce the effect of randomness. The default value is 30.
 #' @param print_progress_bar Whether to print the progress bar and elapsed time. The default value is TRUE.
+#' @param n.cores The number of nodes to be forked when using multi-core parallel computing. If not being set(n.cores=NULL), \code{n.cores <- parallel::detectCores() - 1} would be used.
+#'
 #'
 #' @return Return the AUCs you want to calculate
 #' @export
-#' @import mclust MASS aricode ggplot2 progress
+#' @import mclust MASS aricode ggplot2 progress parallel foreach doParallel
 #' @importFrom randomForest randomForest
 #' @importFrom stats cov nls pnorm predict qnorm quantile
 #'
@@ -77,7 +79,7 @@
 #' elbow_true = ssd(x_true, y_true, mode="true")
 #'
 #'
-ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list = c(15,30,60,90,120,150,300,450,600), n_test = 300, mode="pilot", num_repeat=1, print_progress_bar=TRUE) {
+ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list = seq(from=30,to=600,by=30), n_test = 300, mode="pilot", num_repeat=30, print_progress_bar=TRUE, n.cores=NULL) {
 
   if(!model %in% c( "svm", "randomforest", "tree","self")){
     stop('model \'',model, '\' cannot be found')
@@ -87,17 +89,27 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
     stop('index \'',index, '\' cannot be found')
   }
 
-  n_iter <- length(n_train_list)*num_repeat
-
+  n_iter <- length(n_train_list)+1
   if(print_progress_bar==TRUE){
-    pb <- progress_bar$new(format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull]",
+    pb <- progress_bar$new(format = ":percent [:bar] [Elapsed time: :elapsedfull] :message",
                            total = n_iter,
                            complete = "=",   # Completion bar character
                            incomplete = "-", # Incomplete bar character
                            current = ">",    # Current bar character
                            clear = FALSE,    # If TRUE, clears the bar when finish
-                           width = 100)      # Width of the progress bar
+                           width = 100,      # Width of the progress bar
+                           show_after = 0)
+    pb$tick(0,tokens = list(message="[Initializing...]                 "))
   }
+
+  if(is.null(n.cores)){
+    n.cores <- parallel::detectCores() - 1
+  }
+  my.cluster <- parallel::makeCluster(
+    n.cores,
+    type = "PSOCK"
+  )
+  doParallel::registerDoParallel(cl = my.cluster)
 
 
   if(mode=="pilot"){
@@ -142,13 +154,13 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
 
       n_test = n_test
 
-      errors_temp <- vector(length=num_repeat)
-      ARIs_temp <- vector(length=num_repeat)
-      AMIs_temp <- vector(length=num_repeat)
+      if(print_progress_bar==TRUE){pb$tick(tokens = list(message = paste("[Training size =",n_train,"is running...]")))}
 
-      for(k in 1:num_repeat){
-
-        if(print_progress_bar==TRUE){pb$tick()}
+      result_temp <- foreach(
+        k = 1:num_repeat,
+        .combine = 'rbind',
+        .packages = c('MASS','randomForest','mclust','aricode','progress')
+      ) %dopar% {
 
         for(i in 1:num_class){
           if(i==1){
@@ -166,17 +178,17 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
 
         # Record error rate for one fold (0 or 1 for LOOCV)
         cm = table(test_data[,ncol(test_data)], pred)
-        errors_temp[k] = misclass_err(test_data[,ncol(test_data)], pred)
-        ARIs_temp[k] = adjustedRandIndex(test_data[,ncol(test_data)], pred)
-        AMIs_temp[k] = AMI(test_data[,ncol(test_data)], pred)
+        errors_temp = misclass_err(test_data[,ncol(test_data)], pred)
+        ARIs_temp = adjustedRandIndex(test_data[,ncol(test_data)], pred)
+        AMIs_temp = AMI(test_data[,ncol(test_data)], pred)
+
+        return(cbind(errors_temp,ARIs_temp,AMIs_temp))
 
       }
 
-      errors_syn[j] = mean(errors_temp)
-      ARIs_syn[j] = mean(ARIs_temp)
-      AMIs_syn[j] = mean(AMIs_temp)
-
-
+      errors_syn[j] = mean(result_temp[,"errors_temp"])
+      ARIs_syn[j] = mean(result_temp[,"ARIs_temp"])
+      AMIs_syn[j] = mean(result_temp[,"AMIs_temp"])
 
       j=j+1
     }
@@ -196,16 +208,14 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
     for(n_train in n_train_list){
       # print(j)
       n_test = n_test
-      # table(data$phenoid)
 
-      errors_temp <- vector(length=num_repeat)
-      ARIs_temp <- vector(length=num_repeat)
-      AMIs_temp <- vector(length=num_repeat)
+      if(print_progress_bar==TRUE){pb$tick(tokens = list(message = paste("[Training size =",n_train,"is running...]")))}
 
-      for(k in 1:num_repeat){
-
-        if(print_progress_bar==TRUE){pb$tick()}
-
+      result_temp <- foreach(
+        k = 1:num_repeat,
+        .combine = 'rbind',
+        .packages = c('MASS','randomForest','mclust','aricode','progress')
+      ) %dopar% {
 
         for(i in 1:num_class){
           class_i_ids = which(data$class == names(table(data$class))[i])
@@ -236,21 +246,24 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
         # Record error rate for one fold (0 or 1 for LOOCV)
         cm = table(test_data[,ncol(test_data)], pred)
 
-        errors_temp[k] = misclass_err(test_data[,ncol(test_data)], pred)
-        ARIs_temp[k] = adjustedRandIndex(test_data[,ncol(test_data)], pred)
-        AMIs_temp[k] = AMI(test_data[,ncol(test_data)], pred)
+        errors_temp = misclass_err(test_data[,ncol(test_data)], pred)
+        ARIs_temp = adjustedRandIndex(test_data[,ncol(test_data)], pred)
+        AMIs_temp = AMI(test_data[,ncol(test_data)], pred)
+
+        return(cbind(errors_temp,ARIs_temp,AMIs_temp))
 
       }
-      errors_true[j] = mean(errors_temp)
-      ARIs_true[j] = mean(ARIs_temp)
-      AMIs_true[j] = mean(AMIs_temp)
+
+      errors_true[j] = mean(result_temp[,"errors_temp"])
+      ARIs_true[j] = mean(result_temp[,"ARIs_temp"])
+      AMIs_true[j] = mean(result_temp[,"AMIs_temp"])
 
       j=j+1
     }
     result = rbind(errors_true,ARIs_true,AMIs_true)
   }
 
-
+  parallel::stopCluster(cl = my.cluster)
 
   if(index=="ARI"){
     if(mode=="pilot"){index_used = ARIs_syn}
@@ -308,7 +321,7 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
   # }else if(index == "classification error"){
   #   result = findPC(sdev = pred_index_syn,number = c(length(nn)),method = 'all',figure = T)
   # }
-
+  if(print_progress_bar==TRUE){pb$tick(tokens = list(message="[Finished]                         "))}
 
   return(result)
 }

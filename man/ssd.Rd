@@ -10,11 +10,12 @@ ssd(
   model = "randomforest",
   func = NULL,
   index = "ARI",
-  n_train_list = c(15, 30, 60, 90, 120, 150, 300, 450, 600),
+  n_train_list = seq(from = 30, to = 600, by = 30),
   n_test = 300,
   mode = "pilot",
-  num_repeat = 1,
-  print_progress_bar = TRUE
+  num_repeat = 30,
+  print_progress_bar = TRUE,
+  n.cores = NULL
 )
 }
 \arguments{
@@ -60,6 +61,8 @@ elbow = ssd(x, y, model="self", func=predict_model)
 \item{num_repeat}{The number of times to repeat for each training data size in order to get a average value of index to reduce the effect of randomness. The default value is 30.}
 
 \item{print_progress_bar}{Whether to print the progress bar and elapsed time. The default value is TRUE.}
+
+\item{n.cores}{The number of nodes to be forked when using multi-core parallel computing. If not being set(n.cores=NULL), \code{n.cores <- parallel::detectCores() - 1} would be used.}
 }
 \value{
 Return the AUCs you want to calculate

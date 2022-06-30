@@ -15,7 +15,10 @@ Imports:
     ggplot2,
     e1071,
     randomForest,
-    tree
+    tree,
+    parallel,
+    foreach,
+    doParallel
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
