@@ -8,3 +8,7 @@ library(devtools)
 
 devtools::install_github("ShudongSun/SampleSizeDetermination")
 ```
+If dependency R packages are updated when installing the `devtools` R package, try closing and restarting the R session before proceeding.
+
+## Tutorials
+This [tutorial](https://github.com/ShudongSun/SampleSizeDetermination) introduces how to use the SSD R package.
