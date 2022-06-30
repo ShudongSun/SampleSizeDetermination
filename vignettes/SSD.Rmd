@@ -1,0 +1,34 @@
+---
+title: "SSD"
+author: "Shudong Sun"
+output: rmarkdown::html_vignette
+date: "`r Sys.Date()`"
+vignette: >
+  %\VignetteIndexEntry{SSD}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Introduction
+
+SSD is a simulator that generate different sample size data from pilot data based on multivariate guassian distribution. Then it will calculate the corresponding classification error/ARI/AMI and draw the plot which has the same trend as the true data. People can determine the sample size according the plot we draw.
+
+
+
+# Preparations
+Before we dive into the main task, we need to load the package and an example dataset for our task.
+```{r setup and load data}
+library(SSD)
+
+data_pmbc <- read.csv(system.file("extdata", "data_pmbc_24pc.csv", package = "SSD"),row.names=1)
+data = data_pmbc
+```
