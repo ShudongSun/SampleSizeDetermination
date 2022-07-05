@@ -70,13 +70,15 @@ In the default setting, we use the built-in *random forest* to train the model. 
 ```{r eval=FALSE}
 result_pilot = ssd(x_pilot, y_pilot)
 ```
-
-Then we could use the plot to determine the sample size. We should focus on the trends of the plots because the results produced by synthetic data are usually better than true data, but the trends are pretty similar.
+```{r echo=FALSE, out.width = '100%'}
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/1-1.jpeg")
+```
+The plot is drawn only based on the pilot data and we could use the plot to determine the sample size if we don't have large enough true. We should focus on the trends of the plots because the results produced by synthetic data are usually better than true data, but the trends are pretty similar.
 
 
 ## With pilot data, draw the plot and determine sample size using the self-defined model
 If you want to use the model defined by yourself. Then you need to write a "predict_model" function including your model. The function should take *train_data_x* and *train_data_y* as the first two inputs to train the model and then take *test_data_x* as the third input and return the predicted result of *test_data_x*. Then you could set `model` to *self* and set `func` to *predict_model*, and run the model using your self-defined function.
-```{r eval=FALSE}
+```{r}
 library(e1071)
 
 predict_model <- function(train_data_x, train_data_y, test_data_x){
@@ -86,8 +88,12 @@ predict_model <- function(train_data_x, train_data_y, test_data_x){
     pred <- predict(fit_svm, test_data_x)
     return(pred)
 }
-
+```
+```{r eval=FALSE}
 result_pilot_self = ssd(x_pilot, y_pilot, model="self", func=predict_model)
+```
+```{r echo=FALSE, out.width = '100%'}
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/2-1.jpeg")
 ```
 
 You could use the following code to check the function you defined. The result has to be the predicted value of *test_data_x*.
@@ -121,6 +127,16 @@ result = predict_model(train_data_x, train_data_y, test_data_x)
 ```
 
 
-
-
 ## With pilot data and large true data, draw the plot and compare the result
+If we have large enough true data and try to compare the plot drawn based on pilot data and the plot drawn based on true data, we could change `mode` to *true* and compare the results.
+```{r eval=FALSE}
+# prepare large true data
+x_true = data[,-length(data)]
+y_true = data[,length(data)]
+
+# run the model using the previous pilot data
+result_pilot_11 = ssd(x_pilot, y_pilot,model = "randomforest",index = "classification error",n_train_list=seq(from=30, to=600,by=30))
+# run the model using the true data
+result_true_11 = ssd(x_true , y_true ,model = "randomforest",index = "classification error",n_train_list=seq(from=30, to=600,by=30), mode="true")
+```
+
