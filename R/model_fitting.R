@@ -11,18 +11,19 @@
 #' \item self: You can use your self-defined function. You need to pass your self-defined function via the "func" parameter.
 #' }
 #'
-#' @param func If you set "model" to "self", you have to pass your self-defined model function. This function should be able to take "x_train" and "y_train" as the first two inputs to train the model and then take "x_test" as the third input and return the predicted scores of x_test data. For example,
+#' @param func If you set "model" to "self", you have to pass your self-defined model function. This function should be able to take *train_data_x* and *train_data_y* as the first two inputs to train the model and then take *test_data_x* as the third input and return the predicted scores of *test_data_x* data. For example,
 #'
 #' \preformatted{library(e1071)
 #'
 #' predict_model <- function(train_data_x, train_data_y, test_data_x){
-#'     train_data = data.frame(train_data_x, train_data_y)
-#'     fit_svm<-svm(train_data_y~.,data=train_data,probability=TRUE)
+#'     train_data = data.frame(train_data_x, as.factor(train_data_y))
+#'     names(train_data)[length(train_data)] = "class"
+#'     fit_svm<-svm(class~.,data=train_data,probability=TRUE)
 #'     pred <- predict(fit_svm, test_data_x)
 #'     return(pred)
 #' }
 #'
-#' elbow = ssd(x, y, model="self", func=predict_model)
+#' elbow = ssd(x_pilot, y_pilot, model="self", func=predict_model)
 #' }
 #'
 #' @param index the index used to judge the quality of the model.
@@ -57,7 +58,6 @@
 #' num_PC = length(colnames(data))-1
 #' for(i in 1:num_class){
 #'   class_i_ids = which(data$phenoid == names(table(data$phenoid))[i])
-#'   p = sample(10:15,1)
 #'   pilot_i_ids = sample(class_i_ids, p)
 #'   pilot_i_data = data[pilot_i_ids,]
 #'   if(i == 1){
@@ -68,15 +68,16 @@
 #' }
 #' x_pilot = pilot_data[,-length(pilot_data)]
 #' y_pilot = pilot_data[,length(pilot_data)]
+#' table(pilot_data$phenoid)
 #'
-#' elbow_pilot = ssd(x_pilot, y_pilot)
+#' result_pilot = ssd(x_pilot, y_pilot)
 #'
 #' ### use true data:
 #'
 #' x_true = data[,-length(data)]
 #' y_true = data[,length(data)]
 #'
-#' elbow_true = ssd(x_true, y_true, mode="true")
+#' result_true = ssd(x_true, y_true, mode="true")
 #'
 #'
 ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list = seq(from=30,to=600,by=30), n_test = 300, mode="pilot", num_repeat=30, print_progress_bar=TRUE, n.cores=NULL) {
