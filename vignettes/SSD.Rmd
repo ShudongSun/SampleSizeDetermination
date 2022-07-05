@@ -134,9 +134,41 @@ If we have large enough true data and try to compare the plot drawn based on pil
 x_true = data[,-length(data)]
 y_true = data[,length(data)]
 
-# run the model using the previous pilot data
-result_pilot_11 = ssd(x_pilot, y_pilot,model = "randomforest",index = "classification error",n_train_list=seq(from=30, to=600,by=30))
-# run the model using the true data
-result_true_11 = ssd(x_true , y_true ,model = "randomforest",index = "classification error",n_train_list=seq(from=30, to=600,by=30), mode="true")
+# run the model using the previous pilot data, index using 'ARI'
+result_pilot_11 = ssd(x_pilot, y_pilot,model = "randomforest",index = "ARI",n_train_list=seq(from=30, to=600,by=30))
+# run the model using the true data, index using 'ARI'
+result_true_11 = ssd(x_true , y_true ,model = "randomforest",index = "ARI",n_train_list=seq(from=30, to=600,by=30), mode="true")
+```
+```{r echo=FALSE, out.width = '100%'}
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-3.png")
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-4.png")
+```
+From the results above,even though the values of ARI are different, we can see that the two plots have almost the same trend, which could help us determine the sample size.
+
+We could also try when `index` is *classification error* or *AMI* for this dataset.
+
+```{r eval=FALSE}
+# run the model using the previous pilot data, index using 'classification error'
+result_pilot_12 = ssd(x_pilot, y_pilot,model = "randomforest",index = "classification error",n_train_list=seq(from=30, to=600,by=30))
+# run the model using the true data, index using 'classification error'
+result_true_12 = ssd(x_true , y_true ,model = "randomforest",index = "classification error",n_train_list=seq(from=30, to=600,by=30), mode="true")
+```
+```{r echo=FALSE, out.width = '100%'}
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-1.png")
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-2.png")
 ```
 
+```{r eval=FALSE}
+# prepare large true data
+x_true = data[,-length(data)]
+y_true = data[,length(data)]
+
+# run the model using the previous pilot data, index using 'AMI'
+result_pilot_13 = ssd(x_pilot, y_pilot,model = "randomforest",index = "AMI",n_train_list=seq(from=30, to=600,by=30))
+# run the model using the true data, index using 'AMI'
+result_true_13 = ssd(x_true , y_true ,model = "randomforest",index = "AMI",n_train_list=seq(from=30, to=600,by=30), mode="true")
+```
+```{r echo=FALSE, out.width = '100%'}
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-5.png")
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-6.png")
+```
