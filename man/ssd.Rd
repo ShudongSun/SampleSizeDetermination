@@ -66,7 +66,7 @@ elbow = ssd(x_pilot, y_pilot, model="self", func=predict_model)
 \item{n.cores}{The number of nodes to be forked when using multi-core parallel computing. If not being set(n.cores=NULL), \code{n.cores <- parallel::detectCores() - 1} would be used.}
 }
 \value{
-Return the AUCs you want to calculate
+Return the average classification errors/ARI/AMI of the repeat results for the selected mode.
 }
 \description{
 build the model and determine the sample size based on elbow method of ARI and AMI.
@@ -102,6 +102,5 @@ x_true = data[,-length(data)]
 y_true = data[,length(data)]
 
 result_true = ssd(x_true, y_true, mode="true")
-
 
 }

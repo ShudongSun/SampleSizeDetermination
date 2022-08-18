@@ -18,7 +18,8 @@ Imports:
     tree,
     parallel,
     foreach,
-    doParallel
+    doParallel,
+    minpack.lm
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

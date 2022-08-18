@@ -41,9 +41,8 @@
 #' @param n.cores The number of nodes to be forked when using multi-core parallel computing. If not being set(n.cores=NULL), \code{n.cores <- parallel::detectCores() - 1} would be used.
 #'
 #'
-#' @return Return the AUCs you want to calculate
-#' @export
-#' @import mclust MASS aricode ggplot2 progress parallel foreach doParallel
+#' @return Return the average classification errors/ARI/AMI of the repeat results for the selected mode.
+#' @import mclust MASS aricode progress parallel foreach doParallel ggplot2 minpack.lm
 #' @importFrom randomForest randomForest
 #' @importFrom stats cov nls pnorm predict qnorm quantile
 #'
@@ -79,7 +78,7 @@
 #'
 #' result_true = ssd(x_true, y_true, mode="true")
 #'
-#'
+#' @export
 ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list = seq(from=30,to=600,by=30), n_test = 300, mode="pilot", num_repeat=30, print_progress_bar=TRUE, n.cores=NULL) {
 
   if(!model %in% c( "svm", "randomforest", "tree","self")){
@@ -280,41 +279,7 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
   # print(index_used)
 
 
-  n = n_train_list
-  nn=seq(1,max(n)+50,1)
-  if(mode=="pilot"){group2=c("synthetic-data")}
-  if(mode=="true"){group2=c("true-data")}
-
-  newx = data.frame(n=nn)
-
-  fit_index_syn = nls(index_used ~ a*n^(-b), start = list(a=0.5, b=0.1))
-  # fit_index_true = nls(index_true ~ a*n^(-b), start = list(a=0.5, b=0.1))
-
-  pred_index_syn = predict(fit_index_syn,newx)
-  # pred_index_true = predict(fit_index_true,newx)
-
-  size <- Class <- NULL
-
-  index_df <-data.frame(
-    index = c(index_used),
-    size = rep(n,1),
-    Class = rep(group2,each=length(index_used))
-  )
-  index_pred_df <-data.frame(
-    index = c(pred_index_syn),
-    nn = rep(nn,1),
-    Class = rep(group2,each=length(nn))
-  )
-
-  index_min = min(c(index_used))
-  index_max = max(c(index_used))
-
-  plot(ggplot(data = index_df, aes(x = size, y = index, group=Class,color=Class))+
-         geom_point()+
-         geom_line(data = index_pred_df, aes(x=nn, y=index, group=Class,color=Class), na.rm=TRUE)+
-         labs(x = "Size of training data",y=index,title = paste("Predicted Curve:",model))+
-         theme_bw()+theme(plot.title = element_text(hjust = 0.5),legend.position="bottom")+
-         ylim(max(index_min-0.02,0),index_max+0.05))
+  plot_fit_ipl(index_used, n_train_list, mode, index, model)
 
 
   # if(index %in% c("ARI","AMI")){
@@ -335,6 +300,7 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
 #' @param actual actual values.
 #'
 #' @return Return the classification error
+#' @export
 misclass_err <- function(pred, actual){
   incorrect <- sum(!actual == pred)
   correct <- sum(actual == pred)
@@ -405,4 +371,57 @@ get_predictions <- function(train_data, test_data, model="randomforest", func=NU
   }
   return(pred)
 
+}
+
+
+#' @import ggplot2 minpack.lm
+#' @title plot and fit the data using inverse power law
+#'
+#' @param index_used average index calculated by ssd function, only input one type (one row out of three) of the three.
+#' @param n_train_list the series of training sizes you set to generate *index_used*. This parameter mush match with *index_used*.
+#' @param mode the *mode* parameter you set to generate *index_used*.
+#' @param index the *index* parameter you set to generate *index_used*.
+#' @param model the *model* parameter you set to generate *index_used*.
+#'
+#' @return Return the plot
+#' @export
+plot_fit_ipl <- function(index_used, n_train_list, mode, index, model){
+
+  n = n_train_list
+  nn=seq(1,max(n)+50,1)
+  if(mode=="pilot"){group2=c("synthetic-data")}
+  if(mode=="true"){group2=c("true-data")}
+
+  newx = data.frame(n=nn)
+
+  # fit_index = nls(index_used ~ a*n^(-b), start = list(a=0.5, b=0.1))
+  fit_index = nlsLM(index_used ~ a*n^(-b)+c, start = list(a=0.5, b=0.1, c=0.1),
+                    control = nls.lm.control(maxiter = 1000))
+
+  pred_index = predict(fit_index,newx)
+
+  size <- Class <- NULL
+
+  index_df <-data.frame(
+    index = c(index_used),
+    size = rep(n,1),
+    Class = rep(group2,each=length(index_used))
+  )
+  index_pred_df <-data.frame(
+    index = c(pred_index),
+    nn = rep(nn,1),
+    Class = rep(group2,each=length(nn))
+  )
+
+  index_min = min(c(index_used))
+  index_max = max(c(index_used))
+
+  result_plot = plot(ggplot(data = index_df, aes(x = size, y = index, group=Class,color=Class))+
+         geom_point()+
+         geom_line(data = index_pred_df, aes(x=nn, y=index, group=Class,color=Class), na.rm=TRUE)+
+         labs(x = "Size of training data",y=index,title = paste("Predicted Curve:",model))+
+         theme_bw()+theme(plot.title = element_text(hjust = 0.5),legend.position="bottom")+
+         ylim(max(index_min-0.02,0),index_max+0.05))
+
+  return(result_plot)
 }
