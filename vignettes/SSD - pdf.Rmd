@@ -1,7 +1,7 @@
 ---
 title: "SSD"
 author: "Shudong Sun"
-output: rmarkdown::html_vignette
+output: pdf_document
 date: "`r Sys.Date()`"
 vignette: >
   %\VignetteIndexEntry{SSD}
@@ -25,54 +25,58 @@ SSD can obtain an estimator based on small-size pilot data which could be used t
 
 
 # Preparations
-Before we dive into the main task, we need to load the package and an example dataset for our task. The dataset we use is the **pbmc_68k** dataset from [10x Genomics](https://support.10xgenomics.com/single-cell-gene-expression/datasets).
-
-
-We pre-processed the dataset: In this dataset, *phenoid* is the y label which has 10 classes. We sampled 15 observations from the original dataset for each class and assemble them as the pilot data. we normalize and scale the pilot data at first and then run principal component analysis (PCA) and keep 18 PCs according to *JackStrawPlot* and *ElbowPlot* mentioned in [Seurat - Guided Clustering Tutorial](https://satijalab.org/seurat/articles/pbmc3k_tutorial.html). The *JackStrawPlot* and *ElbowPlot* are shown below:
-```{r echo=FALSE, fig.cap="JackStrawPlot", out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_jackstrawplot_pilot.png")
-```
-```{r echo=FALSE, fig.cap="ElbowPlot", out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_elbowplot_pilot.png")
-```
-
-For the whole dataset, we pre-processed it using the same stratigies and keep 24 PCs according to *JackStrawPlot* and *ElbowPlot*.
-
-```{r echo=FALSE, fig.cap="JackStrawPlot", out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_jackstrawplot.jpeg")
-```
-```{r echo=FALSE, fig.cap="ElbowPlot", out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_elbowplot.jpeg")
-```
-
-We put the pro-processed data into our package and we can load them directly.
+Before we dive into the main task, we need to load the package and an example dataset for our task. The dataset we use is the **pmbc_68k** dataset from [10x Genomics](https://www.10xgenomics.com/resources/datasets/fresh-68-k-pbm-cs-donor-a-1-standard-1-1-0), which consists of >68,000 single cells. With all 32,738 genes.
 ```{r setup and load data}
 library(SSD)
 
 # load data -----------------------------------------------------------------------------
-pilot_data <- read.csv(system.file("extdata", "data_pbmc_pilot_18pc.csv", package = "SSD"),row.names=1)
-true_data <- read.csv(system.file("extdata", "data_pbmc_24pc.csv", package = "SSD"),row.names=1)
-
-print(table(pilot_data$phenoid))
-print(table(true_data$phenoid))
+data_pmbc <- read.csv(system.file("extdata", "data_pmbc_24pc.csv", package = "SSD"),row.names=1)
+data = data_pmbc
 ```
-# Task
-## With pilot data, draw the plot and determine sample size using the built-in model
+We pre-processed the dataset: we normalize and scale the date at first and then run principal component analysis (PCA) and keep 24 PCs according to *JackStrawPlot* and *ElbowPlot* mentioned in [Seurat - Guided Clustering Tutorial](https://satijalab.org/seurat/articles/pbmc3k_tutorial.html). The *JackStrawPlot* and *ElbowPlot* are shown below:
+```{r echo=FALSE, fig.cap="JackStrawPlot", out.width = '100%'}
+knitr::include_graphics("pmbc_jackstrawplot.jpeg")
+```
+```{r echo=FALSE, fig.cap="ElbowPlot", out.width = '100%'}
+knitr::include_graphics("pmbc_elbowplot.jpeg")
+```
 
-In the default setting, we use the built-in *random forest* to train the model. The `index` we use is Adjusted Rand Index (ARI).
-```{r eval=FALSE}
+# Task
+## With selected PCs of the pilot data, draw the plot and determine sample size using the built-in model
+
+The selected PCs of the pilot data is extract from the dataset imported before:
+```{r}
+### use pilot data:
+p = 15
+num_class = length(table(data$phenoid))
+num_PC = length(colnames(data))-1
+for(i in 1:num_class){
+  class_i_ids = which(data$phenoid == names(table(data$phenoid))[i])
+  pilot_i_ids = sample(class_i_ids, p)
+  pilot_i_data = data[pilot_i_ids,]
+  if(i == 1){
+    pilot_data = pilot_i_data
+  }else{
+    pilot_data = rbind(pilot_data, pilot_i_data)
+  }
+}
 x_pilot = pilot_data[,-length(pilot_data)]
 y_pilot = pilot_data[,length(pilot_data)]
 
+print(table(pilot_data$phenoid))
+```
+In this dataset, *phenoid* is the y label which has 10 classes. In the selected PCs of the pilot data, each class has 15 observations.
+In the default setting, we use the built-in *random forest* to train the model. The `index` we use is Adjusted Rand Index (ARI).
+```{r eval=FALSE}
 result_pilot = ssd(x_pilot, y_pilot)
 ```
 ```{r echo=FALSE, out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/1-1.png")
+knitr::include_graphics("1-1.jpeg")
 ```
 The plot is drawn only based on the pilot data and we could use the plot to determine the sample size if we don't have large enough true. We should focus on the trends of the plots because the results produced by synthetic data are usually better than true data, but the trends are pretty similar.
 
 
-## With pilot data, draw the plot and determine sample size using the self-defined model
+## With selected PCs of the pilot data, draw the plot and determine sample size using the self-defined model
 If you want to use the model defined by yourself. Then you need to write a "predict_model" function including your model. The function should take *train_data_x* and *train_data_y* as the first two inputs to train the model and then take *test_data_x* as the third input and return the predicted result of *test_data_x*. Then you could set `model` to *self* and set `func` to *predict_model*, and run the model using your self-defined function.
 ```{r}
 library(e1071)
@@ -89,7 +93,7 @@ predict_model <- function(train_data_x, train_data_y, test_data_x){
 result_pilot_self = ssd(x_pilot, y_pilot, model="self", func=predict_model)
 ```
 ```{r echo=FALSE, out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/2-1.png")
+knitr::include_graphics("2-1.jpeg")
 ```
 
 You could use the following code to check the function you defined. The result has to be the predicted value of *test_data_x*.
@@ -99,11 +103,11 @@ n_train=60
 n_test=200
 
 for(i in 1:num_class){
-  class_i_ids = which(true_data$phenoid == names(table(true_data$phenoid))[i])
+  class_i_ids = which(data$phenoid == names(table(data$phenoid))[i])
   
   train_test_i_ids = sample(class_i_ids, (n_train+n_test))
-  train_i_data = true_data[train_test_i_ids[1:n_train],]
-  test_i_data = true_data[train_test_i_ids[(n_train+1):(n_train+n_test)],]
+  train_i_data = data[train_test_i_ids[1:n_train],]
+  test_i_data = data[train_test_i_ids[(n_train+1):(n_train+n_test)],]
 
   if(i == 1){
     train_data = train_i_data
@@ -135,9 +139,9 @@ result_pilot_11 = ssd(x_pilot, y_pilot,model = "randomforest",index = "ARI",n_tr
 # run the model using the true data, index using 'ARI'
 result_true_11 = ssd(x_true , y_true ,model = "randomforest",index = "ARI",n_train_list=seq(from=30, to=600,by=30), mode="true")
 ```
-```{r echo=FALSE, out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-3.png")
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-4.png")
+```{r echo=FALSE, out.width = '50%'}
+knitr::include_graphics("3-3.png")
+knitr::include_graphics("3-4.png")
 ```
 From the results above,even though the values of ARI are different, we can see that the two plots have almost the same trend, which could help us determine the sample size.
 
@@ -149,9 +153,9 @@ result_pilot_12 = ssd(x_pilot, y_pilot,model = "randomforest",index = "classific
 # run the model using the true data, index using 'classification error'
 result_true_12 = ssd(x_true , y_true ,model = "randomforest",index = "classification error",n_train_list=seq(from=30, to=600,by=30), mode="true")
 ```
-```{r echo=FALSE, out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-1.png")
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-2.png")
+```{r echo=FALSE, out.width = '50%'}
+knitr::include_graphics("3-1.png")
+knitr::include_graphics("3-2.png")
 ```
 
 ```{r eval=FALSE}
@@ -164,7 +168,7 @@ result_pilot_13 = ssd(x_pilot, y_pilot,model = "randomforest",index = "AMI",n_tr
 # run the model using the true data, index using 'AMI'
 result_true_13 = ssd(x_true , y_true ,model = "randomforest",index = "AMI",n_train_list=seq(from=30, to=600,by=30), mode="true")
 ```
-```{r echo=FALSE, out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-5.png")
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-6.png")
+```{r echo=FALSE, out.width = '50%'}
+knitr::include_graphics("3-5.png")
+knitr::include_graphics("3-6.png")
 ```

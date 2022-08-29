@@ -47,24 +47,9 @@
 #' @importFrom stats cov nls pnorm predict qnorm quantile
 #'
 #' @examples
-#' data_pmbc <- read.csv(system.file("extdata", "data_pmbc_24pc.csv", package = "SSD"),row.names=1)
-#' data = data_pmbc
+#' pilot_data <- read.csv(system.file("extdata", "data_pbmc_pilot_18pc.csv", package = "SSD"),row.names=1)
+#' true_data <- read.csv(system.file("extdata", "data_pmbc_24pc.csv", package = "SSD"),row.names=1)
 #'
-#' ### use pilot data:
-#' p = 15
-#' table(data$phenoid)
-#' num_class = length(table(data$phenoid))
-#' num_PC = length(colnames(data))-1
-#' for(i in 1:num_class){
-#'   class_i_ids = which(data$phenoid == names(table(data$phenoid))[i])
-#'   pilot_i_ids = sample(class_i_ids, p)
-#'   pilot_i_data = data[pilot_i_ids,]
-#'   if(i == 1){
-#'     pilot_data = pilot_i_data
-#'   }else{
-#'     pilot_data = rbind(pilot_data, pilot_i_data)
-#'   }
-#' }
 #' x_pilot = pilot_data[,-length(pilot_data)]
 #' y_pilot = pilot_data[,length(pilot_data)]
 #' table(pilot_data$phenoid)
@@ -73,8 +58,9 @@
 #'
 #' ### use true data:
 #'
-#' x_true = data[,-length(data)]
-#' y_true = data[,length(data)]
+#' x_true = true_data[,-length(data)]
+#' y_true = true_data[,length(data)]
+#' table(true_data$phenoid)
 #'
 #' result_true = ssd(x_true, y_true, mode="true")
 #'
