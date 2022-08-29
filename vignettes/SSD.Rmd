@@ -29,19 +29,19 @@ Before we dive into the main task, we need to load the package and an example da
 
 
 We pre-processed the dataset: In this dataset, *phenoid* is the y label which has 10 classes. We sampled 15 observations from the original dataset for each class and assemble them as the pilot data. we normalize and scale the pilot data at first and then run principal component analysis (PCA) and keep 18 PCs according to *JackStrawPlot* and *ElbowPlot* mentioned in [Seurat - Guided Clustering Tutorial](https://satijalab.org/seurat/articles/pbmc3k_tutorial.html). The *JackStrawPlot* and *ElbowPlot* are shown below:
-```{r echo=FALSE, fig.cap="JackStrawPlot", out.width = '100%'}
+```{r echo=FALSE, fig.cap="JackStrawPlot of the pilot data", out.width = '100%'}
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_jackstrawplot_pilot.png")
 ```
-```{r echo=FALSE, fig.cap="ElbowPlot", out.width = '100%'}
+```{r echo=FALSE, fig.cap="ElbowPlot of the pilot data", out.width = '100%'}
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_elbowplot_pilot.png")
 ```
 
 For the whole dataset, we pre-processed it using the same stratigies and keep 24 PCs according to *JackStrawPlot* and *ElbowPlot*.
 
-```{r echo=FALSE, fig.cap="JackStrawPlot", out.width = '100%'}
+```{r echo=FALSE, fig.cap="JackStrawPlot of the whole dataset", out.width = '100%'}
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_jackstrawplot.jpeg")
 ```
-```{r echo=FALSE, fig.cap="ElbowPlot", out.width = '100%'}
+```{r echo=FALSE, fig.cap="ElbowPlot of the whole dataset", out.width = '100%'}
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_elbowplot.jpeg")
 ```
 
