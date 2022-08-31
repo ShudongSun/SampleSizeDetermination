@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 SSD can obtain an estimator based on small-size pilot data which could be used to generate different sizes of training data and test data. Then it will calculate the corresponding classification error/ARI/AMI and draw the plot which has the same trend as the true data. People can determine the sample size according the plot we draw.
 
 ```{r echo=FALSE, fig.cap="Workflow of the SSD package", out.width = '100%'}
-knitr::include_graphics("https://github.com/ShudongSun/SampleSizeDetermination/blob/main/vignettes/flowchart.pdf")
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/flowchart.jpg")
 ```
 
 # Preparations
