@@ -59,7 +59,7 @@ print(table(true_data$phenoid))
 # Task
 ## With pilot data, draw the plot and determine sample size using the built-in model
 
-In the default setting, we use the built-in *random forest* to train the model. The `index` we use is Adjusted Rand Index (ARI).
+In the default setting, we use the built-in *random forest* to train the model. The `index` we use is Adjusted Rand Index (ARI). By default, the size of training data for each class is (30, 60, 90, 120, ... , 540, 570, 600) and the size of test data for each class is 300.
 ```{r eval=FALSE}
 x_pilot = pilot_data[,-length(pilot_data)]
 y_pilot = pilot_data[,length(pilot_data)]

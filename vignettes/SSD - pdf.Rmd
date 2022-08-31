@@ -22,6 +22,9 @@ knitr::opts_chunk$set(
 
 SSD can obtain an estimator based on small-size pilot data which could be used to generate different sizes of training data and test data. Then it will calculate the corresponding classification error/ARI/AMI and draw the plot which has the same trend as the true data. People can determine the sample size according the plot we draw.
 
+```{r echo=FALSE, fig.cap="Workflow of the SSD package", out.width = '100%'}
+knitr::include_graphics("flowchart.pdf")
+```
 
 
 # Preparations
@@ -59,7 +62,7 @@ print(table(true_data$phenoid))
 # Task
 ## With pilot data, draw the plot and determine sample size using the built-in model
 
-In the default setting, we use the built-in *random forest* to train the model. The `index` we use is Adjusted Rand Index (ARI).
+In the default setting, we use the built-in *random forest* to train the model. The `index` we use is Adjusted Rand Index (ARI). By default, the size of training data for each class is (30, 60, 90, 120, ... , 540, 570, 600) and the size of test data for each class is 300.
 ```{r eval=FALSE}
 x_pilot = pilot_data[,-length(pilot_data)]
 y_pilot = pilot_data[,length(pilot_data)]

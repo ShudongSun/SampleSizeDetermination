@@ -12,7 +12,7 @@
 
 <meta name="author" content="Shudong Sun" />
 
-<meta name="date" content="2022-08-29" />
+<meta name="date" content="2022-08-30" />
 
 <title>SSD</title>
 
@@ -334,7 +334,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">SSD</h1>
 <h4 class="author">Shudong Sun</h4>
-<h4 class="date">2022-08-29</h4>
+<h4 class="date">2022-08-30</h4>
 
 
 
@@ -428,7 +428,9 @@ directly.</p>
 built-in model</h2>
 <p>In the default setting, we use the built-in <em>random forest</em> to
 train the model. The <code>index</code> we use is Adjusted Rand Index
-(ARI).</p>
+(ARI). By default, the size of training data for each class is (30, 60,
+90, 120, … , 540, 570, 600) and the size of test data for each class is
+300.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>x_pilot <span class="ot">=</span> pilot_data[,<span class="sc">-</span><span class="fu">length</span>(pilot_data)]</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>y_pilot <span class="ot">=</span> pilot_data[,<span class="fu">length</span>(pilot_data)]</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
