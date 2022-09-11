@@ -1,8 +1,8 @@
 #' @title Sample Size Determination
 #' @description build the model and determine the sample size based on elbow method of ARI and AMI.
 #'
-#' @param x a data frame or a matrix of predictors to be fitted.
-#' @param y A response vector.
+#' @param x A data frame or a matrix of predictors to be fitted. When using "pilot" mode, you need to use this parameter to input the predictor variable of pilot data; When using "true" mode, you need to use this parameter to input the predictor variable of training data.
+#' @param y A response vector. When using "pilot" mode, you need to use this parameter to input the predictor variable of pilot data. When using "true" mode, you need to use this parameter to input the predictor variable of training data.
 #' @param model base classification model.
 #' \itemize{
 #' \item svm: Support Vector Machines. \code{\link[e1071]{svm}} in \code{e1071} package
@@ -39,7 +39,8 @@
 #' @param num_repeat The number of times to repeat for each training data size in order to get a average value of index to reduce the effect of randomness. The default value is 30.
 #' @param print_progress_bar Whether to print the progress bar and elapsed time. The default value is TRUE.
 #' @param n.cores The number of nodes to be forked when using multi-core parallel computing. If not being set(n.cores=NULL), \code{n.cores <- parallel::detectCores() - 1} would be used.
-#'
+#' @param test_x A data frame or a matrix of predictors. When using "true" mode, you need to use this parameter to input the predictor variable of test data.
+#' @param test_y A response vector. When using "true" mode, you need to use this parameter to input the predictor variable of test data.
 #'
 #' @return Return the average classification errors/ARI/AMI of the repeat results for the selected mode.
 #' @import mclust MASS aricode progress parallel foreach doParallel ggplot2 minpack.lm
@@ -47,8 +48,7 @@
 #' @importFrom stats cov nls pnorm predict qnorm quantile
 #'
 #' @examples
-#' pilot_data <- read.csv(system.file("extdata", "data_pbmc_pilot_18pc.csv", package = "SSD"),row.names=1)
-#' true_data <- read.csv(system.file("extdata", "data_pmbc_24pc.csv", package = "SSD"),row.names=1)
+#' pilot_data <- read.csv(system.file("extdata", "data_pbmc68k_pilot_18pc.csv", package = "SSD"),row.names=1)
 #'
 #' x_pilot = pilot_data[,-length(pilot_data)]
 #' y_pilot = pilot_data[,length(pilot_data)]
@@ -58,21 +58,27 @@
 #'
 #' ### use true data:
 #'
-#' x_true = true_data[,-length(data)]
-#' y_true = true_data[,length(data)]
-#' table(true_data$phenoid)
+#' train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv", package = "SSD"),row.names=1)
+#' test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv", package = "SSD"),row.names=1)
 #'
-#' result_true = ssd(x_true, y_true, mode="true")
+#' x_true_train = train_data[,-length(train_data)]
+#' y_true_train = train_data[,length(train_data)]
+#' table(train_data$phenoid)
+#' x_true_test = test_data[,-length(test_data)]
+#' y_true_test = test_data[,length(test_data)]
+#' table(test_data$phenoid)
+#'
+#' result_true = ssd(x=x_true_train, y=y_true_train, mode="true", test_x=x_true_test, test_y=y_true_test)
 #'
 #' @export
-ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list = seq(from=30,to=600,by=30), n_test = 300, mode="pilot", num_repeat=30, print_progress_bar=TRUE, n.cores=NULL) {
+ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list = seq(from=30,to=600,by=30), n_test = 300, mode="pilot", num_repeat=30, print_progress_bar=TRUE, n.cores=NULL, test_x=NULL, test_y=NULL) {
 
   if(!model %in% c( "svm", "randomforest", "tree","self")){
-    stop('model \'',model, '\' cannot be found')
+    stop('\nmodel \'',model, '\' cannot be found')
   }
 
   if(!index %in% c("ARI","AMI","classification error")){
-    stop('index \'',index, '\' cannot be found')
+    stop('\nindex \'',index, '\' cannot be found')
   }
 
   n_iter <- length(n_train_list)+1
@@ -181,10 +187,24 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
     result = rbind(errors_syn,ARIs_syn,AMIs_syn)
 
   }else if(mode=="true"){
-    data = cbind(x,y)
-    names(data)[length(names(data))] = "class"
-    num_class = length(table(y))
-    num_PC = length(colnames(x))
+    if(is.null(test_x) | is.null(test_y)){
+      stop('\nYou must input test_x and test_y parameters when using this mode.')
+    }
+
+    train_data_input = cbind(x,y)
+    names(train_data_input)[length(names(train_data_input))] = "class"
+    num_class_train = length(table(y))
+    num_PC_train = length(colnames(x))
+
+    test_data_input = cbind(test_x, test_y)
+    names(test_data_input)[length(names(test_data_input))] = "class"
+    num_class_test = length(table(test_y))
+    num_PC_test = length(colnames(test_x))
+
+    num_class = num_class_train
+    if(num_PC_train != num_PC_test){
+      stop('\n# of PCs in training data must be matched with # of PCs in test data.')
+    }
 
     n_train_list = n_train_list
     errors_true <- vector(length=length(n_train_list))
@@ -203,19 +223,26 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
         .packages = c('MASS','randomForest','mclust','aricode','progress')
       ) %dopar% {
 
+        # do here
         for(i in 1:num_class){
-          class_i_ids = which(data$class == names(table(data$class))[i])
-          if(length(class_i_ids)>=(n_train+n_test)){
-            train_test_i_ids = sample(class_i_ids, (n_train+n_test))
-            train_i_data = data[train_test_i_ids[1:n_train],]
-            test_i_data = data[train_test_i_ids[(n_train+1):(n_train+n_test)],]
+          class_i_ids_train = which(train_data_input$class == names(table(train_data_input$class))[i])
+          if(length(class_i_ids_train)>=n_train){
+            train_i_ids = sample(class_i_ids_train, n_train)
+            train_i_data = train_data_input[train_i_ids,]
           }else{
-            r = n_train/((n_train+n_test))
-            train_i_ids = sample(class_i_ids[1:ceiling(length(class_i_ids)*r)],n_train,replace=TRUE)
-            test_i_ids = sample(class_i_ids[ceiling((length(class_i_ids)*r)+1):length(class_i_ids)],n_test,replace=TRUE)
-            train_i_data = data[train_i_ids,]
-            test_i_data = data[test_i_ids,]
+            train_i_ids = sample(class_i_ids_train,n_train,replace=TRUE)
+            train_i_data = train_data_input[train_i_ids,]
           }
+
+          class_i_ids_test = which(test_data_input$class == names(table(test_data_input$class))[i])
+          if(length(class_i_ids_test)>=n_test){
+            test_i_ids = sample(class_i_ids_test, n_test)
+            test_i_data = test_data_input[test_i_ids,]
+          }else{
+            test_i_ids = sample(class_i_ids_test,n_test,replace=TRUE)
+            test_i_data = test_data_input[test_i_ids,]
+          }
+
           if(i == 1){
             train_data = train_i_data
             test_data = test_i_data
@@ -401,13 +428,14 @@ plot_fit_ipl <- function(index_used, n_train_list, mode, index, model){
 
   index_min = min(c(index_used))
   index_max = max(c(index_used))
+  delta_max_min = index_max-index_min
 
   result_plot = plot(ggplot(data = index_df, aes(x = size, y = index, group=Class,color=Class))+
          geom_point()+
          geom_line(data = index_pred_df, aes(x=nn, y=index, group=Class,color=Class), na.rm=TRUE)+
          labs(x = "Size of training data",y=index,title = paste("Predicted Curve:",model))+
          theme_bw()+theme(plot.title = element_text(hjust = 0.5),legend.position="bottom")+
-         ylim(max(index_min-0.02,0),index_max+0.05))
+         ylim(max(index_min-delta_max_min*0.2,0),index_max+delta_max_min*0.2))
 
   return(result_plot)
 }
