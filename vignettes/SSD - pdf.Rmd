@@ -23,9 +23,8 @@ knitr::opts_chunk$set(
 SSD can obtain an estimator based on small-size pilot data which could be used to generate different sizes of training data and test data. Then it will calculate the corresponding classification error/ARI/AMI and draw the plot which has the same trend as the true data. People can determine the sample size according the plot we draw.
 
 ```{r echo=FALSE, fig.cap="Workflow of the SSD package", out.width = '100%'}
-knitr::include_graphics("flowchart.pdf")
+knitr::include_graphics("flowchart.jpg")
 ```
-
 
 # Preparations
 Before we dive into the main task, we need to load the package and an example dataset for our task. The dataset we use is the **pbmc_68k** dataset from [10x Genomics](https://support.10xgenomics.com/single-cell-gene-expression/datasets).
@@ -39,7 +38,7 @@ knitr::include_graphics("pbmc_jackstrawplot_pilot.png")
 knitr::include_graphics("pbmc_elbowplot_pilot.png")
 ```
 
-For the whole dataset, we pre-processed it using the same stratigies and keep 24 PCs according to *JackStrawPlot* and *ElbowPlot*.
+For the whole dataset, we pre-processed it using the same stratigies and keep 23 PCs according to *JackStrawPlot* and *ElbowPlot*.
 
 ```{r echo=FALSE, fig.cap="JackStrawPlot of the whole dataset", out.width = '100%'}
 knitr::include_graphics("pbmc_jackstrawplot.jpeg")
@@ -53,11 +52,16 @@ We put the pro-processed data into our package and we can load them directly.
 library(SSD)
 
 # load data -----------------------------------------------------------------------------
-pilot_data <- read.csv(system.file("extdata", "data_pbmc_pilot_18pc.csv", package = "SSD"),row.names=1)
-true_data <- read.csv(system.file("extdata", "data_pbmc_24pc.csv", package = "SSD"),row.names=1)
-
+pilot_data <- read.csv(system.file("extdata", "data_pbmc68k_pilot_18pc.csv",
+                                   package = "SSD"),row.names=1)
 print(table(pilot_data$phenoid))
-print(table(true_data$phenoid))
+
+train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv", 
+                                   package = "SSD"),row.names=1)
+test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv", 
+                                  package = "SSD"),row.names=1)
+print(table(train_data$phenoid))
+print(table(test_data$phenoid))
 ```
 # Task
 ## With pilot data, draw the plot and determine sample size using the built-in model
@@ -99,27 +103,27 @@ You could use the following code to check the function you defined. The result h
 ```{r}
 num_class=10
 n_train=60
-n_test=200
+n_test=100
 
 for(i in 1:num_class){
-  class_i_ids = which(true_data$phenoid == names(table(true_data$phenoid))[i])
+  class_i_ids = which(train_data$phenoid == names(table(train_data$phenoid))[i])
   
   train_test_i_ids = sample(class_i_ids, (n_train+n_test))
-  train_i_data = true_data[train_test_i_ids[1:n_train],]
-  test_i_data = true_data[train_test_i_ids[(n_train+1):(n_train+n_test)],]
+  train_i_data = train_data[train_test_i_ids[1:n_train],]
+  test_i_data = train_data[train_test_i_ids[(n_train+1):(n_train+n_test)],]
 
   if(i == 1){
-    train_data = train_i_data
-    test_data = test_i_data
+    train_data_sample = train_i_data
+    test_data_sample = test_i_data
   }else{
-    train_data = rbind(train_data, train_i_data)
-    test_data = rbind(test_data, test_i_data)
+    train_data_sample = rbind(train_data_sample, train_i_data)
+    test_data_sample = rbind(test_data_sample, test_i_data)
   }
 }
 
-train_data_x = train_data[,-length(test_data)]
-train_data_y = train_data$phenoid
-test_data_x = test_data[,-length(test_data)]
+train_data_x = train_data_sample[,-length(train_data_sample)]
+train_data_y = train_data_sample$phenoid
+test_data_x = test_data_sample[,-length(test_data_sample)]
 
 result = predict_model(train_data_x, train_data_y, test_data_x)
 
@@ -130,15 +134,23 @@ result = predict_model(train_data_x, train_data_y, test_data_x)
 If we have large enough true data and try to compare the plot drawn based on pilot data and the plot drawn based on true data, we could change `mode` to *true* and compare the results.
 ```{r eval=FALSE}
 # prepare large true data
-x_true = data[,-length(data)]
-y_true = data[,length(data)]
+x_true_train = train_data[,-length(train_data)]
+y_true_train = train_data[,length(train_data)]
+
+table(train_data$phenoid)
+x_true_test = test_data[,-length(test_data)]
+y_true_test = test_data[,length(test_data)]
+table(test_data$phenoid)
 
 # run the model using the previous pilot data, index using 'ARI'
-result_pilot_11 = ssd(x_pilot, y_pilot,model = "randomforest",index = "ARI",n_train_list=seq(from=30, to=600,by=30))
+result_pilot_11 = ssd(x_pilot, y_pilot,model = "randomforest",index = "ARI",
+                      n_train_list=seq(from=30, to=600,by=30), n_test=100)
 # run the model using the true data, index using 'ARI'
-result_true_11 = ssd(x_true , y_true ,model = "randomforest",index = "ARI",n_train_list=seq(from=30, to=600,by=30), mode="true")
+result_true_11 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", index="ARI", 
+                     n_train_list=seq(from=30, to=600,by=30),mode="true", 
+                     test_x=x_true_test, test_y=y_true_test, n_test=100)
 ```
-```{r echo=FALSE, out.width = '50%'}
+```{r echo=FALSE, out.width = '100%'}
 knitr::include_graphics("3-3.png")
 knitr::include_graphics("3-4.png")
 ```
@@ -148,11 +160,14 @@ We could also try when `index` is *classification error* or *AMI* for this datas
 
 ```{r eval=FALSE}
 # run the model using the previous pilot data, index using 'classification error'
-result_pilot_12 = ssd(x_pilot, y_pilot,model = "randomforest",index = "classification error",n_train_list=seq(from=30, to=600,by=30))
+result_pilot_12 = ssd(x_pilot, y_pilot,model="randomforest",index="classification error",
+                      n_train_list=seq(from=30, to=600,by=30), n_test=100)
 # run the model using the true data, index using 'classification error'
-result_true_12 = ssd(x_true , y_true ,model = "randomforest",index = "classification error",n_train_list=seq(from=30, to=600,by=30), mode="true")
+result_true_12 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", 
+                  index="classification error", n_train_list=seq(from=30, to=600,by=30), 
+                  mode="true", test_x=x_true_test, test_y=y_true_test, n_test=100)
 ```
-```{r echo=FALSE, out.width = '50%'}
+```{r echo=FALSE, out.width = '100%'}
 knitr::include_graphics("3-1.png")
 knitr::include_graphics("3-2.png")
 ```
@@ -163,11 +178,14 @@ x_true = data[,-length(data)]
 y_true = data[,length(data)]
 
 # run the model using the previous pilot data, index using 'AMI'
-result_pilot_13 = ssd(x_pilot, y_pilot,model = "randomforest",index = "AMI",n_train_list=seq(from=30, to=600,by=30))
+result_pilot_13 = ssd(x_pilot, y_pilot,model = "randomforest",index = "AMI",
+                      n_train_list=seq(from=30, to=600,by=30), n_test=100)
 # run the model using the true data, index using 'AMI'
-result_true_13 = ssd(x_true , y_true ,model = "randomforest",index = "AMI",n_train_list=seq(from=30, to=600,by=30), mode="true")
+result_true_13 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", index="AMI",
+                     n_train_list=seq(from=30, to=600,by=30),mode="true", 
+                     test_x=x_true_test,test_y=y_true_test, n_test=100)
 ```
-```{r echo=FALSE, out.width = '50%'}
+```{r echo=FALSE, out.width = '100%'}
 knitr::include_graphics("3-5.png")
 knitr::include_graphics("3-6.png")
 ```
