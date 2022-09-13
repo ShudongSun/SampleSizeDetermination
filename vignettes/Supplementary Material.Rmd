@@ -1,5 +1,5 @@
 ---
-title: "SSD"
+title: "Supplementary Material"
 author: "Shudong Sun"
 output: pdf_document
 date: "`r Sys.Date()`"
@@ -34,16 +34,16 @@ We pre-processed the dataset: In this dataset, *phenoid* is the y label which ha
 ```{r echo=FALSE, fig.cap="JackStrawPlot of the pilot data", out.width = '100%'}
 knitr::include_graphics("pbmc_jackstrawplot_pilot.png")
 ```
-```{r echo=FALSE, fig.cap="ElbowPlot of the pilot data", out.width = '100%'}
+```{r echo=FALSE, fig.cap="ElbowPlot of the pilot data", out.width = '80%'}
 knitr::include_graphics("pbmc_elbowplot_pilot.png")
 ```
 
 For the whole dataset, we pre-processed it using the same stratigies and keep 23 PCs according to *JackStrawPlot* and *ElbowPlot*.
 
-```{r echo=FALSE, fig.cap="JackStrawPlot of the whole dataset", out.width = '100%'}
+```{r echo=FALSE, fig.cap="JackStrawPlot of the true training data", out.width = '110%'}
 knitr::include_graphics("pbmc_jackstrawplot.jpeg")
 ```
-```{r echo=FALSE, fig.cap="ElbowPlot of the whole dataset", out.width = '100%'}
+```{r echo=FALSE, fig.cap="ElbowPlot of the true training data", out.width = '80%'}
 knitr::include_graphics("pbmc_elbowplot.jpeg")
 ```
 
@@ -51,10 +51,11 @@ We put the pro-processed data into our package and we can load them directly.
 ```{r setup and load data}
 library(SSD)
 
-# load data -----------------------------------------------------------------------------
+# load data
 pilot_data <- read.csv(system.file("extdata", "data_pbmc68k_pilot_18pc.csv",
                                    package = "SSD"),row.names=1)
 print(table(pilot_data$phenoid))
+
 
 train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv", 
                                    package = "SSD"),row.names=1)
@@ -73,7 +74,7 @@ y_pilot = pilot_data[,length(pilot_data)]
 
 result_pilot = ssd(x_pilot, y_pilot)
 ```
-```{r echo=FALSE, out.width = '100%'}
+```{r echo=FALSE, fig.cap="the result plot of the default setting", out.width = '100%'}
 knitr::include_graphics("1-1.png")
 ```
 The plot is drawn only based on the pilot data and we could use the plot to determine the sample size if we don't have large enough true. We should focus on the trends of the plots because the results produced by synthetic data are usually better than true data, but the trends are pretty similar.
@@ -95,7 +96,7 @@ predict_model <- function(train_data_x, train_data_y, test_data_x){
 ```{r eval=FALSE}
 result_pilot_self = ssd(x_pilot, y_pilot, model="self", func=predict_model)
 ```
-```{r echo=FALSE, out.width = '100%'}
+```{r echo=FALSE, fig.cap="the result plot of the self-defined function setting", out.width = '100%'}
 knitr::include_graphics("2-1.png")
 ```
 
@@ -150,7 +151,7 @@ result_true_11 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", ind
                      n_train_list=seq(from=30, to=600,by=30),mode="true", 
                      test_x=x_true_test, test_y=y_true_test, n_test=100)
 ```
-```{r echo=FALSE, out.width = '100%'}
+```{r echo=FALSE, fig.cap="the result plots of comparison using 'ARI' as the index", out.width = '80%'}
 knitr::include_graphics("3-3.png")
 knitr::include_graphics("3-4.png")
 ```
@@ -167,7 +168,7 @@ result_true_12 = ssd(x=x_true_train, y=y_true_train, model = "randomforest",
                   index="classification error", n_train_list=seq(from=30, to=600,by=30), 
                   mode="true", test_x=x_true_test, test_y=y_true_test, n_test=100)
 ```
-```{r echo=FALSE, out.width = '100%'}
+```{r echo=FALSE, fig.cap="the result plots of comparison using 'classification error' as the index", out.width = '80%'}
 knitr::include_graphics("3-1.png")
 knitr::include_graphics("3-2.png")
 ```
@@ -185,7 +186,7 @@ result_true_13 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", ind
                      n_train_list=seq(from=30, to=600,by=30),mode="true", 
                      test_x=x_true_test,test_y=y_true_test, n_test=100)
 ```
-```{r echo=FALSE, out.width = '100%'}
+```{r echo=FALSE, fig.cap="the result plots of comparison using 'AMI' as the index", out.width = '80%'}
 knitr::include_graphics("3-5.png")
 knitr::include_graphics("3-6.png")
 ```
