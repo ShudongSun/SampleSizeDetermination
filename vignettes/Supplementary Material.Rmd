@@ -151,7 +151,7 @@ result_true_11 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", ind
                      n_train_list=seq(from=30, to=600,by=30),mode="true", 
                      test_x=x_true_test, test_y=y_true_test, n_test=100)
 ```
-```{r echo=FALSE, fig.cap="the result plots of comparison using 'ARI' as the index", out.width = '80%', fig.align = 'center'}
+```{r echo=FALSE, fig.cap="the result plots of comparison using 'ARI' as the index", out.width = '70%', fig.align = 'center'}
 knitr::include_graphics("3-3.png")
 knitr::include_graphics("3-4.png")
 ```
@@ -168,7 +168,7 @@ result_true_12 = ssd(x=x_true_train, y=y_true_train, model = "randomforest",
                   index="classification error", n_train_list=seq(from=30, to=600,by=30), 
                   mode="true", test_x=x_true_test, test_y=y_true_test, n_test=100)
 ```
-```{r echo=FALSE, fig.cap="the result plots of comparison using 'classification error' as the index", out.width = '80%', fig.align = 'center'}
+```{r echo=FALSE, fig.cap="the result plots of comparison using 'classification error' as the index", out.width = '70%', fig.align = 'center'}
 knitr::include_graphics("3-1.png")
 knitr::include_graphics("3-2.png")
 ```
@@ -186,7 +186,7 @@ result_true_13 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", ind
                      n_train_list=seq(from=30, to=600,by=30),mode="true", 
                      test_x=x_true_test,test_y=y_true_test, n_test=100)
 ```
-```{r echo=FALSE, fig.cap="the result plots of comparison using 'AMI' as the index", out.width = '80%', fig.align = 'center'}
+```{r echo=FALSE, fig.cap="the result plots of comparison using 'AMI' as the index", out.width = '70%', fig.align = 'center'}
 knitr::include_graphics("3-5.png")
 knitr::include_graphics("3-6.png")
 ```

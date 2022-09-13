@@ -143,7 +143,7 @@ table(test_data$phenoid)
 result_pilot_11 = ssd(x_pilot, y_pilot,model = "randomforest",index = "ARI",n_train_list=seq(from=30, to=600,by=30), n_test=100)
 # run the model using the true data, index using 'ARI'
 result_true_11 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", index="ARI", n_train_list=seq(from=30, to=600,by=30),
-                     mode="true", test_x=x_true_test, test_y=y_true_test, n_test=100)
+                     mode="true", test_x=x_true_test, test_y=y_true_test, n_test=300)
 ```
 ```{r echo=FALSE, out.width = '100%'}
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-3.png")
@@ -152,13 +152,12 @@ knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSize
 From the results above,even though the values of ARI are different, we can see that the two plots have almost the same trend, which could help us determine the sample size.
 
 We could also try when `index` is *classification error* or *AMI* for this dataset.
-
 ```{r eval=FALSE}
 # run the model using the previous pilot data, index using 'classification error'
 result_pilot_12 = ssd(x_pilot, y_pilot,model = "randomforest",index = "classification error",n_train_list=seq(from=30, to=600,by=30), n_test=100)
 # run the model using the true data, index using 'classification error'
 result_true_12 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", index="classification error", n_train_list=seq(from=30, to=600,by=30), 
-                     mode="true", test_x=x_true_test, test_y=y_true_test, n_test=100)
+                     mode="true", test_x=x_true_test, test_y=y_true_test, n_test=300)
 ```
 ```{r echo=FALSE, out.width = '100%'}
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-1.png")
@@ -174,7 +173,7 @@ y_true = data[,length(data)]
 result_pilot_13 = ssd(x_pilot, y_pilot,model = "randomforest",index = "AMI",n_train_list=seq(from=30, to=600,by=30), n_test=100)
 # run the model using the true data, index using 'AMI'
 result_true_13 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", index="AMI", n_train_list=seq(from=30, to=600,by=30), 
-                     mode="true", test_x=x_true_test, test_y=y_true_test, n_test=100)
+                     mode="true", test_x=x_true_test, test_y=y_true_test, n_test=300)
 ```
 ```{r echo=FALSE, out.width = '100%'}
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-5.png")
