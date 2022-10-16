@@ -38,7 +38,7 @@ knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSize
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_elbowplot_pilot.png")
 ```
 
-For the whole dataset, we pre-processed it using the same stratigies and keep 23 PCs according to *JackStrawPlot* and *ElbowPlot*.
+For the whole dataset, we split the it into training data and test data first, then we ran principal component analysis (PCA). We pre-processed the training dataset using the same stratigies and keep 23 PCs according to *JackStrawPlot* and *ElbowPlot* ,and then project the test set onto the reduced feature space obtained during the training.
 
 ```{r echo=FALSE, fig.cap="JackStrawPlot of the whole dataset", out.width = '100%'}
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_jackstrawplot.jpeg")

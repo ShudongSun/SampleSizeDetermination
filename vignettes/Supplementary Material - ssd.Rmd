@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 
 SSD can determine the sample size for our experiment when we only have a few pilot data. Firstly, it can generate different synthetic training datasets and test datasets. Then it will calculate the corresponding different test classiﬁcation error/ARI/AMI. The final step is to construct the plots in the terms of the sample size and the different metrics (test classiﬁcation error/ARI/AMI). Users can determine the sample size by the above plots.
 
-```{r echo=FALSE, fig.cap="Workflow of the SSD package", out.width = '110%', fig.align = 'center'}
+```{r echo=FALSE, fig.cap="Workflow of the SSD package", out.width = '110%'}
 knitr::include_graphics("flowchart.jpg")
 ```
 
@@ -31,19 +31,19 @@ Before we dive into the main task, we need to load the package and an example da
 
 
 We pre-processed the dataset: In this dataset, *phenoid* is the y label which has 10 classes. We sampled 15 observations from the original dataset for each class and assemble them as the pilot data. we normalize and scale the pilot data at first and then run principal component analysis (PCA) and keep 18 PCs according to *JackStrawPlot* and *ElbowPlot* mentioned in [Seurat - Guided Clustering Tutorial](https://satijalab.org/seurat/articles/pbmc3k_tutorial.html). The *JackStrawPlot* and *ElbowPlot* are shown below:
-```{r echo=FALSE, fig.cap="JackStrawPlot of the pilot data", out.width = '100%', fig.align = 'center'}
+```{r echo=FALSE, fig.cap="JackStrawPlot of the pilot data", out.width = '100%'}
 knitr::include_graphics("pbmc_jackstrawplot_pilot.png")
 ```
-```{r echo=FALSE, fig.cap="ElbowPlot of the pilot data", out.width = '80%', fig.align = 'center'}
+```{r echo=FALSE, fig.cap="ElbowPlot of the pilot data", out.width = '80%'}
 knitr::include_graphics("pbmc_elbowplot_pilot.png")
 ```
 
-For the whole dataset, we pre-processed it using the same stratigies and keep 23 PCs according to *JackStrawPlot* and *ElbowPlot*.
+For the whole dataset, we split the it into training data and test data first, then we ran principal component analysis (PCA). We pre-processed the training dataset using the same stratigies and keep 23 PCs according to *JackStrawPlot* and *ElbowPlot* ,and then project the test set onto the reduced feature space obtained during the training.
 
-```{r echo=FALSE, fig.cap="JackStrawPlot of the true training data", out.width = '110%', fig.align = 'center'}
+```{r echo=FALSE, fig.cap="JackStrawPlot of the true training data", out.width = '110%'}
 knitr::include_graphics("pbmc_jackstrawplot.jpeg")
 ```
-```{r echo=FALSE, fig.cap="ElbowPlot of the true training data", out.width = '80%', fig.align = 'center'}
+```{r echo=FALSE, fig.cap="ElbowPlot of the true training data", out.width = '80%'}
 knitr::include_graphics("pbmc_elbowplot.jpeg")
 ```
 
@@ -55,7 +55,6 @@ library(SSD)
 pilot_data <- read.csv(system.file("extdata", "data_pbmc68k_pilot_18pc.csv",
                                    package = "SSD"),row.names=1)
 print(table(pilot_data$phenoid))
-
 
 train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv", 
                                    package = "SSD"),row.names=1)
