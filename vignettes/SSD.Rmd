@@ -47,7 +47,7 @@ knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSize
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_elbowplot.jpeg")
 ```
 
-We put the pro-processed data into our package and we can load them directly.
+We put the pre-processed data into our package and we can load them directly.
 ```{r setup and load data}
 library(SSD)
 
