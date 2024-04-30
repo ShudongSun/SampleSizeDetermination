@@ -17,7 +17,9 @@ ssd(
   print_progress_bar = TRUE,
   n.cores = NULL,
   test_x = NULL,
-  test_y = NULL
+  test_y = NULL,
+  metric_func = NULL,
+  metric_name = NULL
 )
 }
 \arguments{
@@ -53,6 +55,7 @@ elbow = ssd(x_pilot, y_pilot, model="self", func=predict_model)
 \item classification error: what we usually mean.
 \item ARI: Adjusted Rand Index.
 \item AMI: Adjusted Mutual Information.
+\item self: You can use your self-defined metric function. You need to pass your self-defined function via the "metric_func" parameter.
 }}
 
 \item{n_train_list}{a series of numbers which represent the generated training data size for each class.}
@@ -70,6 +73,21 @@ elbow = ssd(x_pilot, y_pilot, model="self", func=predict_model)
 \item{test_x}{A data frame or a matrix of predictors. When using "true" mode, you need to use this parameter to input the predictor variable of test data.}
 
 \item{test_y}{A response vector. When using "true" mode, you need to use this parameter to input the predictor variable of test data.}
+
+\item{metric_func}{If you set "index" to "self", you have to pass your self-defined metric function. This function should be able to take \emph{prediction} and \emph{true_label} as the first two inputs to calculate the metric. For example,
+
+\preformatted{
+
+classification_accuracy <- function(prediction, true_label){
+    correct <- sum(true_label == prediction)
+    acc <- correct/length(prediction)
+    return(acc)
+}
+
+elbow = ssd(x_pilot, y_pilot, index="self", metric_func=classification_accuracy)
+}}
+
+\item{metric_name}{If you set "index" to "self", you can pass your metric name here to show in the plot.}
 }
 \value{
 Return the average classification errors/ARI/AMI of the repeat results for the selected mode.

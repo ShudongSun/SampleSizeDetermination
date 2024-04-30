@@ -4,18 +4,18 @@
 \alias{plot_fit_ipl}
 \title{plot and fit the data using inverse power law}
 \usage{
-plot_fit_ipl(index_used, n_train_list, mode, index, model)
+plot_fit_ipl(results_calculated, n_train_list, mode, index, model)
 }
 \arguments{
-\item{index_used}{average index calculated by ssd function, only input one type (one row out of three) of the three.}
+\item{results_calculated}{average index calculated by ssd function, only input one type (one row out of three) of the three.}
 
-\item{n_train_list}{the series of training sizes you set to generate \emph{index_used}. This parameter mush match with \emph{index_used}.}
+\item{n_train_list}{the series of training sizes you set to generate \emph{results_calculated}. This parameter mush match with \emph{results_calculated}.}
 
-\item{mode}{the \emph{mode} parameter you set to generate \emph{index_used}.}
+\item{mode}{the \emph{mode} parameter you set to generate \emph{results_calculated}.}
 
-\item{index}{the \emph{index} parameter you set to generate \emph{index_used}.}
+\item{index}{the \emph{index} parameter you set to generate \emph{results_calculated}.}
 
-\item{model}{the \emph{model} parameter you set to generate \emph{index_used}.}
+\item{model}{the \emph{model} parameter you set to generate \emph{results_calculated}.}
 }
 \value{
 Return the plot

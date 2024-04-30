@@ -31,7 +31,23 @@
 #' \item classification error: what we usually mean.
 #' \item ARI: Adjusted Rand Index.
 #' \item AMI: Adjusted Mutual Information.
+#' \item self: You can use your self-defined metric function. You need to pass your self-defined function via the "metric_func" parameter.
 #' }
+#'
+#' @param metric_func If you set "index" to "self", you have to pass your self-defined metric function. This function should be able to take *prediction* and *true_label* as the first two inputs to calculate the metric. For example,
+#'
+#' \preformatted{
+#'
+#' classification_accuracy <- function(prediction, true_label){
+#'     correct <- sum(true_label == prediction)
+#'     acc <- correct/length(prediction)
+#'     return(acc)
+#' }
+#'
+#' elbow = ssd(x_pilot, y_pilot, index="self", metric_func=classification_accuracy)
+#' }
+#'
+#' @param metric_name If you set "index" to "self", you can pass your metric name here to show in the plot.
 #'
 #' @param n_train_list a series of numbers which represent the generated training data size for each class.
 #' @param n_test the generated test data size for each class.
@@ -71,13 +87,13 @@
 #' result_true = ssd(x=x_true_train, y=y_true_train, mode="true", test_x=x_true_test, test_y=y_true_test)
 #'
 #' @export
-ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list = seq(from=30,to=600,by=30), n_test = 300, mode="pilot", num_repeat=30, print_progress_bar=TRUE, n.cores=NULL, test_x=NULL, test_y=NULL) {
+ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list = seq(from=30,to=600,by=30), n_test = 300, mode="pilot", num_repeat=30, print_progress_bar=TRUE, n.cores=NULL, test_x=NULL, test_y=NULL, metric_func=NULL, metric_name=NULL) {
 
   if(!model %in% c( "svm", "randomforest", "tree","self")){
     stop('\nmodel \'',model, '\' cannot be found')
   }
 
-  if(!index %in% c("ARI","AMI","classification error")){
+  if(!index %in% c("ARI","AMI","classification error","self")){
     stop('\nindex \'',index, '\' cannot be found')
   }
 
@@ -137,9 +153,7 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
     sigma_hat = sigma_hat/(sum(p_nclass)-num_class)
 
     n_train_list = n_train_list
-    errors_syn <- vector(length=length(n_train_list))
-    ARIs_syn <- vector(length=length(n_train_list))
-    AMIs_syn <- vector(length=length(n_train_list))
+    metrics_syn <- vector(length=length(n_train_list))
     j=1
 
     for(n_train in n_train_list){
@@ -169,22 +183,30 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
 
 
         # Record error rate for one fold (0 or 1 for LOOCV)
-        cm = table(test_data[,ncol(test_data)], pred)
-        errors_temp = misclass_err(test_data[,ncol(test_data)], pred)
-        ARIs_temp = adjustedRandIndex(test_data[,ncol(test_data)], pred)
-        AMIs_temp = AMI(test_data[,ncol(test_data)], pred)
+        if(index=="classification error"){
+          metrics_temp = misclass_err(pred, test_data[,ncol(test_data)])
+        }
+        if(index=="ARI"){
+          metrics_temp = adjustedRandIndex(test_data[,ncol(test_data)], pred)
+        }
+        if(index=="AMI"){
+          metrics_temp = AMI(test_data[,ncol(test_data)], pred)
+        }
+        if(index=="self"){
+          metrics_temp = metric_func(pred, test_data[,ncol(test_data)])
+        }
+        # ARIs_temp = adjustedRandIndex(test_data[,ncol(test_data)], pred)
+        # AMIs_temp = AMI(test_data[,ncol(test_data)], pred)
 
-        return(cbind(errors_temp,ARIs_temp,AMIs_temp))
+        return(metrics_temp)
 
       }
 
-      errors_syn[j] = mean(result_temp[,"errors_temp"])
-      ARIs_syn[j] = mean(result_temp[,"ARIs_temp"])
-      AMIs_syn[j] = mean(result_temp[,"AMIs_temp"])
+      metrics_syn[j] = mean(result_temp)
 
       j=j+1
     }
-    result = rbind(errors_syn,ARIs_syn,AMIs_syn)
+    result = metrics_syn
 
   }else if(mode=="true"){
     if(is.null(test_x) | is.null(test_y)){
@@ -207,9 +229,7 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
     }
 
     n_train_list = n_train_list
-    errors_true <- vector(length=length(n_train_list))
-    ARIs_true <- vector(length=length(n_train_list))
-    AMIs_true <- vector(length=length(n_train_list))
+    metrics_true <- vector(length=length(n_train_list))
     j=1
     for(n_train in n_train_list){
       # print(j)
@@ -257,42 +277,49 @@ ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list
         pred = get_predictions(train_data=train_data, test_data=test_data, model=model, func=func)
 
         # Record error rate for one fold (0 or 1 for LOOCV)
-        cm = table(test_data[,ncol(test_data)], pred)
+        if(index=="classification error"){
+          metrics_temp = misclass_err(pred, test_data[,ncol(test_data)])
+        }
+        if(index=="ARI"){
+          metrics_temp = adjustedRandIndex(test_data[,ncol(test_data)], pred)
+        }
+        if(index=="AMI"){
+          metrics_temp = AMI(test_data[,ncol(test_data)], pred)
+        }
+        if(index=="self"){
+          metrics_temp = metric_func(pred, test_data[,ncol(test_data)])
+        }
+        # ARIs_temp = adjustedRandIndex(test_data[,ncol(test_data)], pred)
+        # AMIs_temp = AMI(test_data[,ncol(test_data)], pred)
 
-        errors_temp = misclass_err(test_data[,ncol(test_data)], pred)
-        ARIs_temp = adjustedRandIndex(test_data[,ncol(test_data)], pred)
-        AMIs_temp = AMI(test_data[,ncol(test_data)], pred)
-
-        return(cbind(errors_temp,ARIs_temp,AMIs_temp))
+        return(metrics_temp)
 
       }
 
-      errors_true[j] = mean(result_temp[,"errors_temp"])
-      ARIs_true[j] = mean(result_temp[,"ARIs_temp"])
-      AMIs_true[j] = mean(result_temp[,"AMIs_temp"])
+      metrics_true[j] = mean(result_temp)
 
       j=j+1
     }
-    result = rbind(errors_true,ARIs_true,AMIs_true)
+    result = metrics_true
   }
 
   parallel::stopCluster(cl = my.cluster)
 
-  if(index=="ARI"){
-    if(mode=="pilot"){index_used = ARIs_syn}
-    if(mode=="true"){index_used = ARIs_true}
-  }else if(index=="AMI"){
-    if(mode=="pilot"){index_used = AMIs_syn}
-    if(mode=="true"){index_used = AMIs_true}
-  }else if(index=="classification error"){
-    if(mode=="pilot"){index_used = errors_syn}
-    if(mode=="true"){index_used = errors_true}
+
+  if(mode=="pilot"){results_calculated = metrics_syn}
+  if(mode=="true"){results_calculated = metrics_true}
+
+  metric_name_pass = index
+
+  if(index=="self"){
+    if(is.null(metric_name)){
+      metric_name_pass = "Self-difined Metric"
+    }else{
+      metric_name_pass = metric_name
+    }
   }
 
-  # print(index_used)
-
-
-  plot_fit_ipl(index_used, n_train_list, mode, index, model)
+  plot_fit_ipl(results_calculated, n_train_list, mode, metric_name_pass, model)
 
 
   # if(index %in% c("ARI","AMI")){
@@ -390,15 +417,15 @@ get_predictions <- function(train_data, test_data, model="randomforest", func=NU
 #' @import ggplot2 minpack.lm
 #' @title plot and fit the data using inverse power law
 #'
-#' @param index_used average index calculated by ssd function, only input one type (one row out of three) of the three.
-#' @param n_train_list the series of training sizes you set to generate *index_used*. This parameter mush match with *index_used*.
-#' @param mode the *mode* parameter you set to generate *index_used*.
-#' @param index the *index* parameter you set to generate *index_used*.
-#' @param model the *model* parameter you set to generate *index_used*.
+#' @param results_calculated average index calculated by ssd function, only input one type (one row out of three) of the three.
+#' @param n_train_list the series of training sizes you set to generate *results_calculated*. This parameter mush match with *results_calculated*.
+#' @param mode the *mode* parameter you set to generate *results_calculated*.
+#' @param index the *index* parameter you set to generate *results_calculated*.
+#' @param model the *model* parameter you set to generate *results_calculated*.
 #'
 #' @return Return the plot
 #' @export
-plot_fit_ipl <- function(index_used, n_train_list, mode, index, model){
+plot_fit_ipl <- function(results_calculated, n_train_list, mode, index, model){
 
   n = n_train_list
   nn=seq(1,max(n)+50,1)
@@ -407,8 +434,8 @@ plot_fit_ipl <- function(index_used, n_train_list, mode, index, model){
 
   newx = data.frame(n=nn)
 
-  # fit_index = nls(index_used ~ a*n^(-b), start = list(a=0.5, b=0.1))
-  fit_index = nlsLM(index_used ~ a*n^(-b)+c, start = list(a=0.5, b=0.1, c=0.1),
+  # fit_index = nls(results_calculated ~ a*n^(-b), start = list(a=0.5, b=0.1))
+  fit_index = nlsLM(results_calculated ~ a*n^(-b)+c, start = list(a=0.5, b=0.1, c=0.1),
                     control = nls.lm.control(maxiter = 1000))
 
   pred_index = predict(fit_index,newx)
@@ -416,9 +443,9 @@ plot_fit_ipl <- function(index_used, n_train_list, mode, index, model){
   size <- Class <- NULL
 
   index_df <-data.frame(
-    index = c(index_used),
+    index = c(results_calculated),
     size = rep(n,1),
-    Class = rep(group2,each=length(index_used))
+    Class = rep(group2,each=length(results_calculated))
   )
   index_pred_df <-data.frame(
     index = c(pred_index),
@@ -426,8 +453,8 @@ plot_fit_ipl <- function(index_used, n_train_list, mode, index, model){
     Class = rep(group2,each=length(nn))
   )
 
-  index_min = min(c(index_used))
-  index_max = max(c(index_used))
+  index_min = min(c(results_calculated))
+  index_max = max(c(results_calculated))
   delta_max_min = index_max-index_min
 
   result_plot = plot(ggplot(data = index_df, aes(x = size, y = index, group=Class,color=Class))+
