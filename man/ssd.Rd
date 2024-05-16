@@ -96,7 +96,8 @@ Return the average classification errors/ARI/AMI of the repeat results for the s
 build the model and determine the sample size based on elbow method of ARI and AMI.
 }
 \examples{
-pilot_data <- read.csv(system.file("extdata", "data_pbmc68k_pilot_18pc.csv", package = "SSD"),row.names=1)
+pilot_data <- read.csv(system.file("extdata", "data_pbmc68k_pilot_18pc.csv",
+                                                package = "SSD"),row.names=1)
 
 x_pilot = pilot_data[,-length(pilot_data)]
 y_pilot = pilot_data[,length(pilot_data)]
@@ -106,8 +107,10 @@ result_pilot = ssd(x_pilot, y_pilot)
 
 ### use true data:
 
-train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv", package = "SSD"),row.names=1)
-test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv", package = "SSD"),row.names=1)
+train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv",
+                                                package = "SSD"),row.names=1)
+test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv",
+                                                package = "SSD"),row.names=1)
 
 x_true_train = train_data[,-length(train_data)]
 y_true_train = train_data[,length(train_data)]
@@ -116,6 +119,7 @@ x_true_test = test_data[,-length(test_data)]
 y_true_test = test_data[,length(test_data)]
 table(test_data$phenoid)
 
-result_true = ssd(x=x_true_train, y=y_true_train, mode="true", test_x=x_true_test, test_y=y_true_test)
+result_true = ssd(x=x_true_train, y=y_true_train, mode="true",
+                                    test_x=x_true_test, test_y=y_true_test)
 
 }

@@ -64,7 +64,8 @@
 #' @importFrom stats cov nls pnorm predict qnorm quantile
 #'
 #' @examples
-#' pilot_data <- read.csv(system.file("extdata", "data_pbmc68k_pilot_18pc.csv", package = "SSD"),row.names=1)
+#' pilot_data <- read.csv(system.file("extdata", "data_pbmc68k_pilot_18pc.csv",
+#'                                                 package = "SSD"),row.names=1)
 #'
 #' x_pilot = pilot_data[,-length(pilot_data)]
 #' y_pilot = pilot_data[,length(pilot_data)]
@@ -74,8 +75,10 @@
 #'
 #' ### use true data:
 #'
-#' train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv", package = "SSD"),row.names=1)
-#' test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv", package = "SSD"),row.names=1)
+#' train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv",
+#'                                                 package = "SSD"),row.names=1)
+#' test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv",
+#'                                                 package = "SSD"),row.names=1)
 #'
 #' x_true_train = train_data[,-length(train_data)]
 #' y_true_train = train_data[,length(train_data)]
@@ -84,7 +87,8 @@
 #' y_true_test = test_data[,length(test_data)]
 #' table(test_data$phenoid)
 #'
-#' result_true = ssd(x=x_true_train, y=y_true_train, mode="true", test_x=x_true_test, test_y=y_true_test)
+#' result_true = ssd(x=x_true_train, y=y_true_train, mode="true",
+#'                                     test_x=x_true_test, test_y=y_true_test)
 #'
 #' @export
 ssd <- function(x, y, model="randomforest", func=NULL, index="ARI", n_train_list = seq(from=30,to=600,by=30), n_test = 300, mode="pilot", num_repeat=30, print_progress_bar=TRUE, n.cores=NULL, test_x=NULL, test_y=NULL, metric_func=NULL, metric_name=NULL) {

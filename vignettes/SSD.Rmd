@@ -43,7 +43,8 @@ We put the pre-processed data into our package and we can load them directly.
 library(SSD)
 
 # load data -----------------------------------------------------------------------------
-pilot_data <- read.csv(system.file("extdata", "data_pbmc68k_pilot_15_18pc.csv", package = "SSD"),row.names=1)
+pilot_data <- read.csv(system.file("extdata", "data_pbmc68k_pilot_15_18pc.csv", 
+                                   package = "SSD"),row.names=1)
 print(table(pilot_data$phenoid))
 ```
 # Task
@@ -83,8 +84,10 @@ knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSize
 
 You could use the following code to check the function you defined. The result has to be the predicted value of *test_data_x*.
 ```{r}
-train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv", package = "SSD"),row.names=1)
-test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv", package = "SSD"),row.names=1)
+train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv",
+                                   package = "SSD"),row.names=1)
+test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv",
+                                  package = "SSD"),row.names=1)
 
 num_class=10
 n_train=60
@@ -157,7 +160,8 @@ x_true_test = test_data[,-length(test_data)]
 y_true_test = test_data[,length(test_data)]
 
 # run the model using the true data, index using 'ARI'
-result_true_11 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", index="ARI", n_train_list=seq(from=30, to=600,by=30),
+result_true_11 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", 
+                     index="ARI", n_train_list=seq(from=30, to=600,by=30),
                      mode="true", test_x=x_true_test, test_y=y_true_test, n_test=300)
 ```
 ```{r echo=FALSE, out.width = '100%'}
@@ -182,7 +186,8 @@ This process shows that as more data is collected, the synthetic learning curve 
 
 
 ```{r eval=FALSE}
-pilot_data_15 <- read.csv(system.file("extdata", "data_pbmc68k_pilot_15_18pc.csv", package = "SSD"),row.names=1)
+pilot_data_15 <- read.csv(system.file("extdata", "data_pbmc68k_pilot_15_18pc.csv",
+                                      package = "SSD"),row.names=1)
 print(table(pilot_data_15$phenoid))
 x_pilot_15 = pilot_data_15[,-length(pilot_data_15)]
 y_pilot_15 = pilot_data_15[,length(pilot_data_15)]
@@ -194,7 +199,8 @@ knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSize
 ```
 
 ```{r eval=FALSE}
-pilot_data_30 <- read.csv(system.file("extdata", "data_pbmc68k_pilot_30_18pc.csv", package = "SSD"),row.names=1)
+pilot_data_30 <- read.csv(system.file("extdata", "data_pbmc68k_pilot_30_18pc.csv",
+                                      package = "SSD"),row.names=1)
 print(table(pilot_data_30$phenoid))
 x_pilot_30 = pilot_data_30[,-length(pilot_data_30)]
 y_pilot_30 = pilot_data_30[,length(pilot_data_30)]
@@ -206,7 +212,8 @@ knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSize
 ```
 
 ```{r eval=FALSE}
-pilot_data_60 <- read.csv(system.file("extdata", "data_pbmc68k_pilot_60_22pc.csv", package = "SSD"),row.names=1)
+pilot_data_60 <- read.csv(system.file("extdata", "data_pbmc68k_pilot_60_22pc.csv",
+                                      package = "SSD"),row.names=1)
 print(table(pilot_data_60$phenoid))
 x_pilot_60 = pilot_data_60[,-length(pilot_data_60)]
 y_pilot_60 = pilot_data_60[,length(pilot_data_60)]
@@ -218,7 +225,8 @@ knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSize
 ```
 
 ```{r eval=FALSE}
-pilot_data_90 <- read.csv(system.file("extdata", "data_pbmc68k_pilot_90_22pc.csv", package = "SSD"),row.names=1)
+pilot_data_90 <- read.csv(system.file("extdata", "data_pbmc68k_pilot_90_22pc.csv",
+                                      package = "SSD"),row.names=1)
 print(table(pilot_data_90$phenoid))
 x_pilot_90 = pilot_data_90[,-length(pilot_data_90)]
 y_pilot_90 = pilot_data_90[,length(pilot_data_90)]
@@ -230,8 +238,10 @@ pilot_90_ARI = ssd(x_pilot_90, y_pilot_90, index = "ARI")
 ```
 
 ```{r eval=FALSE}
-train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv", package = "SSD"),row.names=1)
-test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv", package = "SSD"),row.names=1)
+train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv",
+                                   package = "SSD"),row.names=1)
+test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv",
+                                  package = "SSD"),row.names=1)
 print(table(train_data$phenoid))
 print(table(test_data$phenoid))
 
@@ -245,8 +255,9 @@ y_true_test = test_data[,length(test_data)]
 table(test_data$phenoid)
 
 
-true_ARI = ssd(x=x_true_train, y=y_true_train, model = "randomforest", index="ARI", n_train_list=seq(from=30, to=600,by=30),
-                     mode="true", test_x=x_true_test, test_y=y_true_test, n_test=300)
+true_ARI = ssd(x=x_true_train, y=y_true_train, model = "randomforest",
+               index="ARI", n_train_list=seq(from=30, to=600,by=30),
+              mode="true", test_x=x_true_test, test_y=y_true_test, n_test=300)
 ```
 ```{r echo=FALSE, out.width = '100%'}
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/true_ARI.png")
@@ -270,7 +281,8 @@ fit_function <- function(x, a, b, c) {
 
 # Fit the data for each row
 fits <- apply(results_ARI, 1, function(y) {
-  nlsLM(y ~ fit_function(x, a, b, c), start = list(a = 0.5, b = 0.1, c = 0.1), control = nls.lm.control(maxiter = 1000))
+  nlsLM(y ~ fit_function(x, a, b, c), start = list(a = 0.5, b = 0.1, c = 0.1),
+        control = nls.lm.control(maxiter = 1000))
 })
 
 # Get fitted values
@@ -284,16 +296,21 @@ colors <- c("red", "blue", "green", "purple", "orange")
 # Adjust margins to place the legend
 par(mar = c(5, 4, 4, 18) + 0.1)
 
-legends <- c("pilot data 1: 15 obs for each class", "pilot data 2: 30 obs for each class",
-             "pilot data 3: 60 obs for each class", "pilot data 4: 90 obs for each class",
+legends <- c("pilot data 1: 15 obs for each class", 
+             "pilot data 2: 30 obs for each class",
+             "pilot data 3: 60 obs for each class", 
+             "pilot data 4: 90 obs for each class",
              "true data")
 
 # Plot original data and fitted curves
-matplot(x, t(results_ARI), type = "p", pch = 1, col = colors, xlab = "Size of training data for each class", ylab = "ARI", main = "ARI vs Size of Training Data")
+matplot(x, t(results_ARI), type = "p", pch = 1, col = colors,
+        xlab = "Size of training data for each class", ylab = "ARI",
+        main = "ARI vs Size of Training Data")
 matlines(x, fitted_values, type = "l", lty = 1, col = colors)
 
 # Add legend
-legend("topright", inset = c(-0.75, 0), legend = legends, col = colors, pch = 1, lty = 1, xpd = TRUE)
+legend("topright", inset = c(-0.75, 0), legend = legends, col = colors,
+       pch = 1, lty = 1, xpd = TRUE)
 ```
 ```{r echo=FALSE, out.width = '100%'}
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/results_ARI.png")
