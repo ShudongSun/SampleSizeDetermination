@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-SSD can determine the sample size for our experiment when we only have a few pilot data. Firstly, it can generate different synthetic training datasets and test datasets. Then it will calculate the corresponding different test classiﬁcation error/ARI/AMI. The final step is to construct the plots in the terms of the sample size and the different metrics (test classiﬁcation error/ARI/AMI). Users can determine the sample size by the above plots.
+SSD can determine the sample size for our experiment when we only have a few pilot data. Firstly, it can generate different synthetic training datasets and test datasets. Then it will calculate the corresponding different test classiﬁcation error/ARI/AMI or user self-defiend metric. The final step is to construct the plots in the terms of the sample size and the different metrics (test classiﬁcation error/ARI/AMI or user self-defiend metric). Users can determine the sample size by the above plots.
 
 ```{r echo=FALSE, fig.cap="Workflow of the SSD package", out.width = '100%'}
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/flowchart.jpg")
@@ -38,27 +38,13 @@ knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSize
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_elbowplot_pilot.png")
 ```
 
-For the whole dataset, we split the it into training data and test data first, then we ran principal component analysis (PCA). We pre-processed the training dataset using the same stratigies and keep 23 PCs according to *JackStrawPlot* and *ElbowPlot* ,and then project the test set onto the reduced feature space obtained during the training.
-
-```{r echo=FALSE, fig.cap="JackStrawPlot of the whole dataset", out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_jackstrawplot.jpeg")
-```
-```{r echo=FALSE, fig.cap="ElbowPlot of the whole dataset", out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_elbowplot.jpeg")
-```
-
 We put the pre-processed data into our package and we can load them directly.
 ```{r setup and load data}
 library(SSD)
 
 # load data -----------------------------------------------------------------------------
-pilot_data <- read.csv(system.file("extdata", "data_pbmc68k_pilot_18pc.csv", package = "SSD"),row.names=1)
+pilot_data <- read.csv(system.file("extdata", "data_pbmc68k_pilot_15_18pc.csv", package = "SSD"),row.names=1)
 print(table(pilot_data$phenoid))
-
-train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv", package = "SSD"),row.names=1)
-test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv", package = "SSD"),row.names=1)
-print(table(train_data$phenoid))
-print(table(test_data$phenoid))
 ```
 # Task
 ## With pilot data, draw the plot and determine sample size using the built-in model
@@ -68,13 +54,12 @@ In the default setting, we use the built-in *random forest* to train the model. 
 x_pilot = pilot_data[,-length(pilot_data)]
 y_pilot = pilot_data[,length(pilot_data)]
 
-result_pilot = ssd(x_pilot, y_pilot)
+result_pilot = ssd(x_pilot, y_pilot, index = "ARI")
 ```
 ```{r echo=FALSE, out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/1-1.png")
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pilot_15_ARI.png")
 ```
-The plot is drawn only based on the pilot data and we could use the plot to determine the sample size if we don't have large enough true. We should focus on the trends of the plots because the results produced by synthetic data are usually better than true data, but the trends are pretty similar.
-
+The learning curve in Figure 6-8 is based solely on the pilot data, which consists of 15 observations per class. This plot can be used to determine the initial sample size. As we continue to collect more data, we can use the updated pilot dataset to refine the learning curve and achieve more accurate results.
 
 ## With pilot data, draw the plot and determine sample size using the self-defined model
 If you want to use the model defined by yourself. Then you need to write a "predict_model" function including your model. The function should take *train_data_x* and *train_data_y* as the first two inputs to train the model and then take *test_data_x* as the third input and return the predicted result of *test_data_x*. Then you could set `model` to *self* and set `func` to *predict_model*, and run the model using your self-defined function.
@@ -98,6 +83,9 @@ knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSize
 
 You could use the following code to check the function you defined. The result has to be the predicted value of *test_data_x*.
 ```{r}
+train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv", package = "SSD"),row.names=1)
+test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv", package = "SSD"),row.names=1)
+
 num_class=10
 n_train=60
 n_test=100
@@ -127,55 +115,186 @@ result = predict_model(train_data_x, train_data_y, test_data_x)
 ```
 
 
+## With pilot data, draw the plot and determine sample size using the self-defined index
+If you want to use the index defined by yourself. Then you need to write a new function including your index. This function should be able to take prediction and true_label as the first two inputs to calculate the metric.
+
+```{r}
+classification_accuracy <- function(prediction, true_label){
+    correct <- sum(true_label == prediction)
+    acc <- correct/length(prediction)
+    return(acc)
+}
+```
+```{r eval=FALSE}
+result_accuracy = ssd(x_pilot, y_pilot, index="self", metric_func=classification_accuracy)
+```
+
+
 ## With pilot data and large true data, draw the plot and compare the result
-If we have large enough true data and try to compare the plot drawn based on pilot data and the plot drawn based on true data, we could change `mode` to *true* and compare the results.
+If we have large enough true data and we can compare the plot drawn based on pilot data and the plot drawn based on true data. For the original dataset, we split the it into training data and test data first, then we ran principal component analysis (PCA). We pre-processed the training dataset using the same stratigies and keep 23 PCs according to *JackStrawPlot* and *ElbowPlot* ,and then project the test set onto the reduced feature space obtained during the training.
+
+```{r echo=FALSE, fig.cap="JackStrawPlot of the whole dataset", out.width = '100%'}
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_jackstrawplot.jpeg")
+```
+```{r echo=FALSE, fig.cap="ElbowPlot of the whole dataset", out.width = '100%'}
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pbmc_elbowplot.jpeg")
+```
+
+To get the plot drawn based on true data, we could change `mode` to *true* and compare the results.
+```{r}
+# load large true data
+train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv", package = "SSD"),row.names=1)
+test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv", package = "SSD"),row.names=1)
+print(table(train_data$phenoid))
+print(table(test_data$phenoid))
+```
 ```{r eval=FALSE}
 # prepare large true data
 x_true_train = train_data[,-length(train_data)]
 y_true_train = train_data[,length(train_data)]
 
-table(train_data$phenoid)
 x_true_test = test_data[,-length(test_data)]
 y_true_test = test_data[,length(test_data)]
-table(test_data$phenoid)
 
-# run the model using the previous pilot data, index using 'ARI'
-result_pilot_11 = ssd(x_pilot, y_pilot,model = "randomforest",index = "ARI",n_train_list=seq(from=30, to=600,by=30), n_test=100)
 # run the model using the true data, index using 'ARI'
 result_true_11 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", index="ARI", n_train_list=seq(from=30, to=600,by=30),
                      mode="true", test_x=x_true_test, test_y=y_true_test, n_test=300)
 ```
 ```{r echo=FALSE, out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-3.png")
 knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-4.png")
 ```
-From the results above,even though the values of ARI are different, we can see that the two plots have almost the same trend, which could help us determine the sample size.
 
-We could also try when `index` is *classification error* or *AMI* for this dataset.
+Furthermore, we incrementally added more data to the pilot dataset to simulate real-world data collection, as illustrated in the plots below. Specifically, we added 15 cells from each class to the initial pilot dataset (Pilot Data 1), resulting in Pilot Data 2 with 30 cells per class. We then added 30 cells from each class to Pilot Data 2, creating Pilot Data 3 with 60 cells per class. Finally, we added another 30 cells from each class to Pilot Data 3, resulting in Pilot Data 4 with 90 cells per class.
+```{r echo=FALSE, out.width = '100%'}
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/results_ARI.png")
+```
+
+```{r echo=FALSE, out.width = '100%'}
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/results_AMI.png")
+```
+
+```{r echo=FALSE, out.width = '100%'}
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/results_CE.png")
+```
+This process shows that as more data is collected, the synthetic learning curve increasingly approximates the true curve.
+
+# Appendix: Code for Drawing the Comparison Plot
+
+
 ```{r eval=FALSE}
-# run the model using the previous pilot data, index using 'classification error'
-result_pilot_12 = ssd(x_pilot, y_pilot,model = "randomforest",index = "classification error",n_train_list=seq(from=30, to=600,by=30), n_test=100)
-# run the model using the true data, index using 'classification error'
-result_true_12 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", index="classification error", n_train_list=seq(from=30, to=600,by=30), 
-                     mode="true", test_x=x_true_test, test_y=y_true_test, n_test=300)
+pilot_data_15 <- read.csv(system.file("extdata", "data_pbmc68k_pilot_15_18pc.csv", package = "SSD"),row.names=1)
+print(table(pilot_data_15$phenoid))
+x_pilot_15 = pilot_data_15[,-length(pilot_data_15)]
+y_pilot_15 = pilot_data_15[,length(pilot_data_15)]
+
+pilot_15_ARI = ssd(x_pilot_15, y_pilot_15, index = "ARI")
 ```
 ```{r echo=FALSE, out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-1.png")
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-2.png")
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pilot_15_ARI.png")
 ```
 
 ```{r eval=FALSE}
+pilot_data_30 <- read.csv(system.file("extdata", "data_pbmc68k_pilot_30_18pc.csv", package = "SSD"),row.names=1)
+print(table(pilot_data_30$phenoid))
+x_pilot_30 = pilot_data_30[,-length(pilot_data_30)]
+y_pilot_30 = pilot_data_30[,length(pilot_data_30)]
+
+pilot_30_ARI = ssd(x_pilot_30, y_pilot_30, index = "ARI")
+```
+```{r echo=FALSE, out.width = '100%'}
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pilot_30_ARI.png")
+```
+
+```{r eval=FALSE}
+pilot_data_60 <- read.csv(system.file("extdata", "data_pbmc68k_pilot_60_22pc.csv", package = "SSD"),row.names=1)
+print(table(pilot_data_60$phenoid))
+x_pilot_60 = pilot_data_60[,-length(pilot_data_60)]
+y_pilot_60 = pilot_data_60[,length(pilot_data_60)]
+
+pilot_60_ARI = ssd(x_pilot_60, y_pilot_60, index = "ARI")
+```
+```{r echo=FALSE, out.width = '100%'}
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pilot_60_ARI.png")
+```
+
+```{r eval=FALSE}
+pilot_data_90 <- read.csv(system.file("extdata", "data_pbmc68k_pilot_90_22pc.csv", package = "SSD"),row.names=1)
+print(table(pilot_data_90$phenoid))
+x_pilot_90 = pilot_data_90[,-length(pilot_data_90)]
+y_pilot_90 = pilot_data_90[,length(pilot_data_90)]
+
+pilot_90_ARI = ssd(x_pilot_90, y_pilot_90, index = "ARI")
+```
+```{r echo=FALSE, out.width = '100%'}
+# knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/pilot_90_ARI.png")
+```
+
+```{r eval=FALSE}
+train_data <- read.csv(system.file("extdata", "data_pbmc68k_train_23pc.csv", package = "SSD"),row.names=1)
+test_data <- read.csv(system.file("extdata", "data_pbmc68k_test_23pc.csv", package = "SSD"),row.names=1)
+print(table(train_data$phenoid))
+print(table(test_data$phenoid))
+
 # prepare large true data
-x_true = data[,-length(data)]
-y_true = data[,length(data)]
+x_true_train = train_data[,-length(train_data)]
+y_true_train = train_data[,length(train_data)]
+table(train_data$phenoid)
 
-# run the model using the previous pilot data, index using 'AMI'
-result_pilot_13 = ssd(x_pilot, y_pilot,model = "randomforest",index = "AMI",n_train_list=seq(from=30, to=600,by=30), n_test=100)
-# run the model using the true data, index using 'AMI'
-result_true_13 = ssd(x=x_true_train, y=y_true_train, model = "randomforest", index="AMI", n_train_list=seq(from=30, to=600,by=30), 
+x_true_test = test_data[,-length(test_data)]
+y_true_test = test_data[,length(test_data)]
+table(test_data$phenoid)
+
+
+true_ARI = ssd(x=x_true_train, y=y_true_train, model = "randomforest", index="ARI", n_train_list=seq(from=30, to=600,by=30),
                      mode="true", test_x=x_true_test, test_y=y_true_test, n_test=300)
 ```
 ```{r echo=FALSE, out.width = '100%'}
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-5.png")
-knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/3-6.png")
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/true_ARI.png")
+```
+
+
+```{r eval=FALSE}
+# combine previous results
+results_ARI <- rbind(pilot_15_ARI, pilot_30_ARI, pilot_60_ARI, pilot_90_ARI, true_ARI)
+
+# Convert to matrix data
+results_ARI <- as.matrix(results_ARI)
+
+# Create x-axis
+x <- seq(from = 30, to = 600, by = 30)
+
+# Define the fitting function
+fit_function <- function(x, a, b, c) {
+  return(a * x^(-b) + c)
+}
+
+# Fit the data for each row
+fits <- apply(results_ARI, 1, function(y) {
+  nlsLM(y ~ fit_function(x, a, b, c), start = list(a = 0.5, b = 0.1, c = 0.1), control = nls.lm.control(maxiter = 1000))
+})
+
+# Get fitted values
+fitted_values <- sapply(fits, function(fit) {
+  predict(fit, list(x = x))
+})
+
+# Custom colors
+colors <- c("red", "blue", "green", "purple", "orange")
+
+# Adjust margins to place the legend
+par(mar = c(5, 4, 4, 18) + 0.1)
+
+legends <- c("pilot data 1: 15 obs for each class", "pilot data 2: 30 obs for each class",
+             "pilot data 3: 60 obs for each class", "pilot data 4: 90 obs for each class",
+             "true data")
+
+# Plot original data and fitted curves
+matplot(x, t(results_ARI), type = "p", pch = 1, col = colors, xlab = "Size of training data for each class", ylab = "ARI", main = "ARI vs Size of Training Data")
+matlines(x, fitted_values, type = "l", lty = 1, col = colors)
+
+# Add legend
+legend("topright", inset = c(-0.75, 0), legend = legends, col = colors, pch = 1, lty = 1, xpd = TRUE)
+```
+```{r echo=FALSE, out.width = '100%'}
+knitr::include_graphics("https://raw.githubusercontent.com/ShudongSun/SampleSizeDetermination/main/vignettes/results_ARI.png")
 ```
